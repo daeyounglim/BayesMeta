@@ -37,10 +37,10 @@ Rcpp::List BayesNMR(const arma::vec& y,
 	const int nz = z.n_cols;
 	const vec sd2 = arma::pow(sd, 2.0);
 
-	ivec narms(ns, fill::zeros);
-	for (int i = 0; i < ns; ++i) {
-		++narms(ids(i));
-	}
+	// ivec narms(ns, fill::zeros);
+	// for (int i = 0; i < ns; ++i) {
+	// 	++narms(ids(i));
+	// }
 
 	/*************************
 	Parameters for adaptive MH
@@ -115,7 +115,10 @@ Rcpp::List BayesNMR(const arma::vec& y,
 	{
 		Progress prog(ndiscard, true);
 		for (int idiscard = 0; idiscard < ndiscard; ++idiscard) {
-			R_CheckUserInterrupt();
+			// R_CheckUserInterrupt();
+			if (Progress::check_abort()) {
+				return Rcpp::List::create(Rcpp::Named("error") = "user interrupt aborted");
+			}
 			/**********
 			Sample sig2
 			**********/
@@ -301,7 +304,10 @@ Rcpp::List BayesNMR(const arma::vec& y,
 	{
 		Progress prog(nkeep, true);
 		for (int ikeep=0; ikeep < nkeep; ++ikeep) {
-			R_CheckUserInterrupt();
+			// R_CheckUserInterrupt();
+			if (Progress::check_abort()) {
+				return Rcpp::List::create(Rcpp::Named("error") = "user interrupt aborted");
+			}
 			for (int iskip=0; iskip < nskip; ++iskip) {
 				++icount_mh;
 				/**********

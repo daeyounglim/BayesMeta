@@ -20,17 +20,23 @@ public:
 			    arma::vec& sig2_k_,
 			    arma::vec& npt_k_,
 			    arma::mat& Rho_,
-			    double& nu_) : Tk(Tk_), resid(resid_), lam_k(lam_k_), Z_k_(Z_k_), E_k(E_k_), sig2_k_(sig2_k), npt_k(npt_k_), Rho(Rho_), nu(nu) {}
+			    double& nu_,
+			    double& maxll_) : Tk(Tk_), resid(resid_), lam_k(lam_k_), Z_k_(Z_k_), E_k(E_k_), sig2_k_(sig2_k), npt_k(npt_k_), Rho(Rho_), nu(nu), maxll(maxll_) {}
 
 	double operator()(const double& lam) const {
-		double loglik = -M_LN_SQRT_2PI * static_cast<double>(Tk) + 
-			0.5 * nu * (std::log(nu) - M_LN2) - R::lgammafn(0.5 * nu) + (0.5 * nu - 1.0) * lam - 0.5 * nu * lam;
+		double loglik = -M_LN_SQRT_2PI * static_cast<double>(Tk) + (0.5 * nu - 1.0) * lam - 0.5 * nu * lam;
+			// 0.5 * nu * (std::log(nu) - M_LN2) - R::lgammafn(0.5 * nu) + ;
 		double logdet_val;
 		double logdet_sign;
 		mat ERE_S = diagmat(Z_k) * E_k.t() * Rho * E_k * diagmat(Z_k / lam);
 		ERE_S.diag() += sig2_k / npt_k;
 		log_det(logdet_val, logdet_sign, ERE_S);
-		return std::exp(loglik -0.5 * (logdet_val + arma::accu(resid % arma::solve(ERE_S, resid))));
+		loglik -= 0.5 * (logdet_val + arma::accu(resid % arma::solve(ERE_S, resid)));
+		/***********************************
+		subtract by maximum likelihood value
+		for numerical stability
+		***********************************/
+		return std::exp(loglik  - maxll);
 	}
 };
 
@@ -42,6 +48,7 @@ double int_ObservedLik(int& Tk,
 			    	   arma::vec& sig2_k,
 			    	   arma::vec& npt_k,
 			    	   arma::mat& Rho,
-			    	   double& nu);
+			    	   double& nu,
+			    	   double& maxll);
 
 #endif

@@ -72,11 +72,13 @@ bayesnmr <- function(y, sd, x, ids, iarm, groupinfo, npt, prior = list(), mcmc =
 				z = z,
 				ids = ids,
 				iarm = iarm,
+				K = K,
+				nT = nT,
 				groupinfo = groupinfo,
 				prior = priorvals,
 				mcmctime = mcmctime,
 				mcmc = mcvals,
 				mcmc.draws = fout)
-	class(out) = "bayesnmr"
+	class(out) <- "bayesnmr"
 	out
 }

@@ -1,0 +1,17 @@
+Package: BayesMeta
+Type: Package
+Title: Bayesian Network Meta-Regression Hierarchical Models Using Heavy-Tailed Multivariate Random Effects with Covariate-Dependent Variances
+Version: 1.0
+Date: 2020-01-22
+Author: Daeyoung Lim
+Maintainer: Daeyoung Lim
+    <daeyoung.lim@uconn.edu>
+Description: More about what it does
+    (maybe more than one line)
+License: GPL (>= 3)
+Encoding: UTF-8
+LazyLoad: yes
+RoxygenNote: 6.0.1
+NeedsCompilation: yes
+Imports: Rcpp (>= 0.12.14)
+LinkingTo: Rcpp, RcppArmadillo, RcppProgress

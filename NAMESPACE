@@ -1,0 +1,3 @@
+useDynLib(BayesMeta, .registration=TRUE)
+importFrom(Rcpp, evalCpp)
+exportPattern("^[[:alpha:]]+")

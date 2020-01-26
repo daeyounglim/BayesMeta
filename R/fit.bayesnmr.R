@@ -1,0 +1,3 @@
+"fit.bayesnmr" <- function(object) {
+	
+}

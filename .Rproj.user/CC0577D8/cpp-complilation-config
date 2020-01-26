@@ -11,7 +11,7 @@
         "-IC:/a/w/1/s/vendor/extsoft/include",
         "-fopenmp"
     ],
-    "hash" : "157989214515797124991579712499",
+    "hash" : "157998696515797124991579712499",
     "is_cpp" : true,
     "pch" : "Rcpp"
 }

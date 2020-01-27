@@ -1,6 +1,8 @@
 useDynLib(BayesMeta, .registration=TRUE)
-importFrom(Rcpp, evalCpp)
 exportPattern("^[[:alpha:]]+")
 
+## import other packages
+importFrom(Rcpp, evalCpp)
+
 ## register S3 methods
-S3method(fit, bayesnmr)
+S3method(gof, bayesnmr)

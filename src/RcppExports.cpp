@@ -2,6 +2,7 @@
 // Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 #include <RcppArmadillo.h>
+#include <RcppEigen.h>
 #include <Rcpp.h>
 
 using namespace Rcpp;
@@ -31,9 +32,35 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// calc_modelfit
+Rcpp::List calc_modelfit(const arma::vec& y, const arma::mat& x, const arma::mat& z, const arma::uvec& ids, const arma::uvec& iarm, const arma::vec& npt, const double& nu, const arma::mat& betas, const arma::mat& sig2s, const arma::mat& phis, const arma::mat& lams, const arma::cube& Rhos, const int& K, const int& nT, const int& nkeep);
+RcppExport SEXP _BayesMeta_calc_modelfit(SEXP ySEXP, SEXP xSEXP, SEXP zSEXP, SEXP idsSEXP, SEXP iarmSEXP, SEXP nptSEXP, SEXP nuSEXP, SEXP betasSEXP, SEXP sig2sSEXP, SEXP phisSEXP, SEXP lamsSEXP, SEXP RhosSEXP, SEXP KSEXP, SEXP nTSEXP, SEXP nkeepSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::vec& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type z(zSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type ids(idsSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type iarm(iarmSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type npt(nptSEXP);
+    Rcpp::traits::input_parameter< const double& >::type nu(nuSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type betas(betasSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type sig2s(sig2sSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type phis(phisSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type lams(lamsSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type Rhos(RhosSEXP);
+    Rcpp::traits::input_parameter< const int& >::type K(KSEXP);
+    Rcpp::traits::input_parameter< const int& >::type nT(nTSEXP);
+    Rcpp::traits::input_parameter< const int& >::type nkeep(nkeepSEXP);
+    rcpp_result_gen = Rcpp::wrap(calc_modelfit(y, x, z, ids, iarm, npt, nu, betas, sig2s, phis, lams, Rhos, K, nT, nkeep));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_BayesMeta_BayesNMR", (DL_FUNC) &_BayesMeta_BayesNMR, 15},
+    {"_BayesMeta_calc_modelfit", (DL_FUNC) &_BayesMeta_calc_modelfit, 15},
     {NULL, NULL, 0}
 };
 

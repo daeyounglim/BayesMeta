@@ -5,13 +5,14 @@
         "-IC:/Users/dal18007/Documents/R/win-library/3.5/Rcpp/include",
         "-IC:/Users/dal18007/Documents/R/win-library/3.5/RcppArmadillo/include",
         "-IC:/Users/dal18007/Documents/R/win-library/3.5/RcppProgress/include",
+        "-IC:/Users/dal18007/Documents/R/win-library/3.5/RcppEigen/include",
         "-std=gnu++11",
         "-IC:/PROGRA~1/MICROS~1/ROPEN~1/R-35~1.3/include",
         "-DNDEBUG",
         "-IC:/a/w/1/s/vendor/extsoft/include",
         "-fopenmp"
     ],
-    "hash" : "157998696515797124991579712499",
+    "hash" : "158006343615797124991579712499",
     "is_cpp" : true,
     "pch" : "Rcpp"
 }

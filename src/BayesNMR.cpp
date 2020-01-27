@@ -427,7 +427,7 @@ Rcpp::List BayesNMR(const arma::vec& y,
 
 					mat SigRgami = Z_k * diagmat(1.0 / sig2_k) * Z_k + lam(k) * ERE.i();
 					SigRgami = 0.5 * (SigRgami + SigRgami.t());
-					mat SigRgamiChol = cholmod(SigRgami);
+					mat SigRgamiChol = chol(SigRgami);
 					vec muRgam = arma::solve(arma::trimatu(SigRgamiChol), arma::solve(arma::trimatl(SigRgamiChol.t()), Z_k * diagmat(1.0 / sig2_k) * resid_k));
 
 					int n_k = idx.n_elem;
@@ -482,14 +482,6 @@ Rcpp::List BayesNMR(const arma::vec& y,
 			sig2_save.col(ikeep) = sig2;
 			Rho_save.slice(ikeep) = Rho;
 			gam_save.col(ikeep) = Rgam;
-
-			vec LL(K);
-			for (int k=0; k < K; ++k) {
-				uvec idx = idxks(k);
-				int Tk = idx.n_elem;
-				LL(k) = int_ObservedLik(Tk, resid(idx), lam(k), Z(idx), Eks(k), sig2(idx), npt(idx), Rho, nu);
-			}
-			double m = max(LL);
 			
 
 			prog.increment();

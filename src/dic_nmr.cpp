@@ -2,54 +2,26 @@
 #include <Rmath.h>
 #include <algorithm>
 #include <iterator>
+#include <RcppArmadillo.h>
 #include <progress.hpp>
 #include <progress_bar.hpp>
-#include <RcppArmadillo.h>
 #include <RcppNumerical.h>
 #include <Rdefines.h>
-#include "neldermead.h"
 #include "dic_nmr.h"
 // [[Rcpp::depends(RcppArmadillo, RcppProgress, RcppNumerical)]]
 using namespace Numer;
 using namespace arma;
 
 
-/********************************
-negative log-likelihood of lambda
-for Nelder-Mead method
-********************************/
-double neg_loglik_lam(const arma::vec& lam,
-				  	  const double& nu,
-				  	  const arma::vec& resid_k, // = y_k - X_k * beta
-				  	  const arma::vec& Z_k,
-				  	  const arma::mat& ERE, // = E_k' * Rho * E_k
-				  	  const arma::vec& sig2_k) {
-	using namespace arma;
-
-	double lam_k = lam(0);
-	double eta_k = std::log(lam_k);
-	double loglik = 0.5 * nu * (eta_k - lam_k) - eta_k;
-	mat tmpmat = arma::diagmat(Z_k) * ERE * arma::diagmat(Z_k / lam_k);
-	tmpmat.diag() += sig2_k;
-	double logdet_val;
-	double logdet_sign;
-	log_det(logdet_val, logdet_sign, tmpmat);
-	loglik += -0.5 * logdet_val - 0.5 * arma::accu(resid_k % arma::solve(tmpmat, resid_k));
-	return -loglik;
-})
-
-double int_ObservedLik(int& Tk,
-					   arma::vec& resid,
-			    	   arma::vec& Z_k,
-			    	   arma::mat& E_k,
-			    	   arma::vec& sig2_k,
-			    	   arma::mat& Rho,
-			    	   double& nu,
-			    	   double& maxll) {
-	ObservedLik f(Tk, resid, Z_k, E_k, sig2_k, Rho, nu, maxll);
+double int_observedlik(const int& Tk,
+					   const arma::vec& resid,
+			    	   const arma::mat& ZEREZ_S,
+			    	   const double& nu,
+			    	   const double& maxll) {
+	ObservedLik f(Tk, resid, ZEREZ_S, nu, maxll);
 	double err_est;
 	int err_code;
-	return maxll + std::log(Numer::integrate(f, 0.0, R_PosInf, err_est, err_code));
+	return maxll + std::log(Numer::integrate(f, 0.0, R_PosInf, err_est, err_code, 100, 1.0e-08, 1.0e-06, Integrator<double>::GaussKronrod21));
 }
 
 /**************************************************
@@ -100,41 +72,35 @@ Rcpp::List calc_modelfit(const arma::vec& y,
 	vec sig2_est = arma::mean(sig2s, 1);
 	vec lam_est = arma::mean(lams, 1);
 	vec phi_est = arma::mean(phis, 1);
-	mat Rho_est = arma::mean(Rhos, 2);
+	mat Rho_est(nT, nT, fill::zeros);
+	for (int ikeep=0; ikeep < nkeep; ++ikeep) {
+		Rho_est += Rhos.slice(ikeep);
+	}
+	Rho_est /= static_cast<double>(nkeep);
+	// mat Rho_est = arma::mean(Rhos, 2);
 
 	/*******************************************
 	Dev(thetabar) = -2 * log L(thetabar | D_oy)
 	*******************************************/
 	double Dev_thetabar = 0.0;
+	vec Z_est = arma::exp(z * phi_est);
 	for (int k=0; k < K; ++k) {
 		uvec idx = idxks(k);
 		vec y_k = y(idx);
 		mat E_k = Eks(k);
 		mat X_k = arma::join_horiz(Xks(k), E_k.t());
 		vec resid_k = y_k - X_k * beta_est;
-		vec Z_k = Z_ikeep(idx);
-		mat ERE = E_k.t() * Rho_est * E_k;
+		vec Z_k = Z_est(idx);
+		mat ZEREZ_S = diagmat(Z_k) * E_k.t() * Rho_est * E_k * diagmat(Z_k / lam_est(k));
 		vec sig2_k = sig2_est(idx) / npt(idx);
+		ZEREZ_S.diag() += sig2_k;
 
-		vec start(1);
-		start(0) = std::log(lam_est(k));
-		vec xmin(1, fill::zeros);
-		double maxll = 0.0; // = ynewlo
-		double reqmin = 1.0e-20;
-		int konvge = 5;
-		int kcount = 1000;
-		vec step(1);
-		step(0) = 0.2;
-		int icount = 0;
-		int numres = 0;
-		int ifault = 0;
+		NegLogLikLam nlll(nu, resid_k, ZEREZ_S);
+		nlll.optimize(std::log(lam_est(k)));
+		double maxll = -nlll.ynewlo;
 
-		nelmin( [&] (const arma::vec lam) {
-				 	return neg_loglik_lam(lam, nu, resid_k, Z_k, ERE, sig2_k);
-				}, 1, start, xmin, maxll, reqmin, step, konvge, kcount, icount, numres, ifault);
-		maxll *= -1.0;
-
-		Dev_thetabar += -2.0 * int_ObservedLik(idx.n_elem, resid_k, Z_k, E_k, sig2_k, Rho_est, nu, maxll);
+		int Tk = idx.n_elem;
+		Dev_thetabar += -2.0 * int_observedlik(Tk, resid_k, ZEREZ_S, nu, maxll);
 	}
 
 
@@ -150,6 +116,7 @@ Rcpp::List calc_modelfit(const arma::vec& y,
 			vec beta_ikeep = betas.col(ikeep);
 			vec sig2_ikeep = sig2s.col(ikeep);
 			vec phi_ikeep = phis.col(ikeep);
+			vec lam_ikeep = lams.col(ikeep);
 			mat Rho_ikeep = Rhos.slice(ikeep);
 			vec Z_ikeep = arma::exp(z * phi_ikeep);
 
@@ -160,28 +127,17 @@ Rcpp::List calc_modelfit(const arma::vec& y,
 				mat X_k = arma::join_horiz(Xks(k), E_k.t());
 				vec resid_k = y_k - X_k * beta_ikeep;
 				vec Z_k = Z_ikeep(idx);
-				mat ERE = E_k.t() * Rho_ikeep * E_k;
+				double lam_k = lam_ikeep(k);
+				mat ZEREZ_S = diagmat(Z_k) * E_k.t() * Rho_ikeep * E_k * diagmat(Z_k / lam_k);
 				vec sig2_k = sig2_ikeep(idx) / npt(idx);
+				ZEREZ_S.diag() += sig2_k;
 
-				vec start(1);
-				start(0) = std::log(lam_k(k));
-				vec xmin(1, fill::zeros);
-				double maxll = 0.0; // = ynewlo
-				double reqmin = 1.0e-20;
-				int konvge = 5;
-				int kcount = 1000;
-				vec step(1);
-				step(0) = 0.2;
-				int icount = 0;
-				int numres = 0;
-				int ifault = 0;
+				NegLogLikLam nlll(nu, resid_k, ZEREZ_S);
+				nlll.optimize(std::log(lam_k));
+				double maxll = -nlll.ynewlo;
 
-				nelmin( [&] (const arma::vec lam) {
-						 	return neg_loglik_lam(lam, nu, resid_k, Z_k, ERE, sig2_k);
-						}, 1, start, xmin, maxll, reqmin, step, konvge, kcount, icount, numres, ifault);
-				maxll *= -1.0;
-
-				Dev_bar += -2.0 * int_ObservedLik(idx.n_elem, resid_k, Z_k, E_k, sig2_k, Rho_ikeep, nu, maxll);
+				int Tk = idx.n_elem;
+				Dev_bar += -2.0 * int_observedlik(Tk, resid_k, ZEREZ_S, nu, maxll);
 			}
 
 			prog.increment();
@@ -189,7 +145,7 @@ Rcpp::List calc_modelfit(const arma::vec& y,
 		Dev_bar /= static_cast<double>(nkeep);
 		double p_D = Dev_bar - Dev_thetabar;
 		double DIC = Dev_thetabar + 2.0 * p_D;
-		return Rcpp::List:create(Rcpp::Named("DIC")=DIC);
+		return Rcpp::List::create(Rcpp::Named("DIC")=DIC);
 	}
 }
 

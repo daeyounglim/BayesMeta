@@ -5,3 +5,7 @@ BayesNMR <- function(y, sd, x, z, ids, iarm, npt, nu, c01_inv, c02_inv, K, nT, n
     .Call(`_BayesMeta_BayesNMR`, y, sd, x, z, ids, iarm, npt, nu, c01_inv, c02_inv, K, nT, ndiscard, nskip, nkeep)
 }
 
+calc_modelfit <- function(y, x, z, ids, iarm, npt, nu, betas, sig2s, phis, lams, Rhos, K, nT, nkeep) {
+    .Call(`_BayesMeta_calc_modelfit`, y, x, z, ids, iarm, npt, nu, betas, sig2s, phis, lams, Rhos, K, nT, nkeep)
+}
+

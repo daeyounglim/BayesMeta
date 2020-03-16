@@ -1,3 +1,3 @@
-"gof" <- function(x) {
+"gof" <- function(x, verbose=FALSE) {
 	UseMethod("gof", x)
 } 

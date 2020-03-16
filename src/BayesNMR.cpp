@@ -7,7 +7,7 @@
 #include <iterator>
 #include <progress.hpp>
 #include <progress_bar.hpp>
-#include "Listbuilder.h"
+#include "ListBuilder.h"
 #include "misc_nmr.h"
 // [[Rcpp::depends(RcppArmadillo,RcppProgress))]]
 
@@ -26,7 +26,11 @@ Rcpp::List BayesNMR(const arma::vec& y,
 					const int& nT,
 					const int& ndiscard,
 					const int& nskip,
-					const int& nkeep) {
+					const int& nkeep,
+					const bool verbose,
+					const arma::vec& beta_init,
+					const arma::vec& phi_init,
+					const arma::vec& sig2_init) {
 	using namespace arma;
 	using namespace Rcpp;
 	using namespace R;
@@ -37,10 +41,10 @@ Rcpp::List BayesNMR(const arma::vec& y,
 	const int nz = z.n_cols;
 	const vec sd2 = arma::pow(sd, 2.0);
 
-	// ivec narms(ns, fill::zeros);
-	// for (int i = 0; i < ns; ++i) {
-	// 	++narms(ids(i));
-	// }
+	bool t_random_effect = false;
+	if (R_FINITE(nu)) {
+		t_random_effect = true;
+	}
 
 	/*************************
 	Parameters for adaptive MH
@@ -66,27 +70,6 @@ Rcpp::List BayesNMR(const arma::vec& y,
 	Rho_tunings.fill(0.1);
 
 	
-	/********************
-	Initialize parameters 
-	********************/
-	vec beta(nx+nT, fill::zeros);
-	vec xb(ns, fill::zeros);
-	vec resid = y - xb;
-	vec Rgam(ns, fill::zeros);
-	mat Rho(nT,nT, fill::zeros);
-	mat pRho(nT,nT, fill::zeros);
-	for (int i = 0; i < nT; ++i) {
-		Rho(i,i) = 1.0;
-		pRho(i,i) = 1.0;
-	}
-	vec sig2(ns, fill::ones);
-
-	vec phi(nz, fill::ones);
-	vec Z = arma::exp(z * phi);
-
-	vec lam(K, fill::ones);
-
-
 	/* make a list of y_k, X_k, z_k*/
 	arma::field<arma::mat> Xks(K);
 	arma::field<arma::mat> Eks(K);
@@ -106,16 +89,41 @@ Rcpp::List BayesNMR(const arma::vec& y,
 	}
 
 
+	/********************
+	Initialize parameters 
+	********************/
+	vec beta = beta_init;
+	vec phi = phi_init;
+	vec sig2 = sig2_init;
+	vec xb(ns, fill::zeros);
+	for (int k=0; k < K; ++k) {
+		mat E_k = Eks(k);
+		mat X_k = arma::join_horiz(Xks(k), E_k.t());
+		uvec idx = idxks(k);
+		xb(idx) = X_k * beta;
+	}
+	vec resid = y - xb;
+	vec Rgam(ns, fill::zeros);
+	mat Rho(nT,nT, fill::zeros);
+	mat pRho(nT,nT, fill::zeros);
+	for (int i = 0; i < nT; ++i) {
+		Rho(i,i) = 1.0;
+		pRho(i,i) = 1.0;
+	}
 
+	vec Z = arma::exp(z * phi);
+
+	vec lam(K, fill::ones);
 
 	/*******************
 	Begin burn-in period
 	*******************/
-	Rcout << "Warming up" << endl;
+	if (verbose) {
+		Rcout << "Warming up" << endl;
+	}
 	{
-		Progress prog(ndiscard, true);
+		Progress prog(ndiscard, verbose);
 		for (int idiscard = 0; idiscard < ndiscard; ++idiscard) {
-			// R_CheckUserInterrupt();
 			if (Progress::check_abort()) {
 				return Rcpp::List::create(Rcpp::Named("error") = "user interrupt aborted");
 			}
@@ -163,24 +171,26 @@ Rcpp::List BayesNMR(const arma::vec& y,
 			/***********************
 			Sample eta = log(lambda)
 			***********************/
-			for (int k=0; k < K; ++k) {
-				uvec idx = idxks(k);
-				vec sig2_k = sig2(idx) / npt(idx);
-				vec resid_k = resid(idx);
-				mat E_k = Eks(k);
-				vec z_k = Z(idx);
-				mat ERE_k = E_k.t() * Rho * E_k;
+			if (t_random_effect) {
+				for (int k=0; k < K; ++k) {
+					uvec idx = idxks(k);
+					vec sig2_k = sig2(idx) / npt(idx);
+					vec resid_k = resid(idx);
+					mat E_k = Eks(k);
+					vec z_k = Z(idx);
+					mat ERE_k = E_k.t() * Rho * E_k;
 
-				double eta_k = std::log(lam(k));
-				double eta_prop = ::norm_rand() * std::exp(eta_tunings(k)) + eta_k;
-				
-				// log-likelihood difference
-				double ll_diff = loglik_eta(eta_prop, nu, resid_k, z_k, ERE_k, sig2_k) - 
-								loglik_eta(eta_k, nu, resid_k, z_k, ERE_k, sig2_k);
+					double eta_k = std::log(lam(k));
+					double eta_prop = ::norm_rand() * std::exp(eta_tunings(k)) + eta_k;
+					
+					// log-likelihood difference
+					double ll_diff = loglik_eta(eta_prop, nu, resid_k, z_k, ERE_k, sig2_k) - 
+									loglik_eta(eta_k, nu, resid_k, z_k, ERE_k, sig2_k);
 
-				if (std::log(::unif_rand()) < ll_diff) {
-					lam(k) = std::exp(eta_prop);
-					++eta_accepts(k);
+					if (std::log(::unif_rand()) < ll_diff) {
+						lam(k) = std::exp(eta_prop);
+						++eta_accepts(k);
+					}
 				}
 			}
 
@@ -300,9 +310,11 @@ Rcpp::List BayesNMR(const arma::vec& y,
 
 
 	int icount_mh = ndiscard;
-	Rcout << "Saving posterior samples" << endl;
+	if (verbose) {
+		Rcout << "Saving posterior samples" << endl;
+	}
 	{
-		Progress prog(nkeep, true);
+		Progress prog(nkeep, verbose);
 		for (int ikeep=0; ikeep < nkeep; ++ikeep) {
 			// R_CheckUserInterrupt();
 			if (Progress::check_abort()) {
@@ -354,25 +366,27 @@ Rcpp::List BayesNMR(const arma::vec& y,
 				/***********************
 				Sample eta = log(lambda)
 				***********************/
-				for (int k=0; k < K; ++k) {
-					uvec idx = idxks(k);
-					vec sig2_k = sig2(idx) / npt(idx);
-					vec resid_k = resid(idx);
-					mat E_k = Eks(k);
-					vec z_k = Z(idx);
-					mat ERE_k = E_k.t() * Rho * E_k;
+				if (t_random_effect) {
+					for (int k=0; k < K; ++k) {
+						uvec idx = idxks(k);
+						vec sig2_k = sig2(idx) / npt(idx);
+						vec resid_k = resid(idx);
+						mat E_k = Eks(k);
+						vec z_k = Z(idx);
+						mat ERE_k = E_k.t() * Rho * E_k;
 
-					double eta_k = std::log(lam(k));
-					double eta_prop = ::norm_rand() * std::exp(eta_tunings(k)) + eta_k;
-					
-					// log-likelihood difference
-					double ll_diff = loglik_eta(eta_prop, nu, resid_k, z_k, ERE_k, sig2_k) - 
-									loglik_eta(eta_k, nu, resid_k, z_k, ERE_k, sig2_k);
+						double eta_k = std::log(lam(k));
+						double eta_prop = ::norm_rand() * std::exp(eta_tunings(k)) + eta_k;
+						
+						// log-likelihood difference
+						double ll_diff = loglik_eta(eta_prop, nu, resid_k, z_k, ERE_k, sig2_k) - 
+										loglik_eta(eta_k, nu, resid_k, z_k, ERE_k, sig2_k);
 
-					if (std::log(::unif_rand()) < ll_diff) {
-						lam(k) = std::exp(eta_prop);
-						++eta_accepts(k);
-					}
+						if (std::log(::unif_rand()) < ll_diff) {
+							lam(k) = std::exp(eta_prop);
+							++eta_accepts(k);
+						}
+					}					
 				}
 
 

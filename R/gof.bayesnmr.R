@@ -1,4 +1,4 @@
-"gof.bayesnmr" <- function(object) {
+"gof.bayesnmr" <- function(object, verbose=FALSE) {
 	y <- object$y
 	npt <- object$npt
 	x <- object$x
@@ -25,7 +25,8 @@
 				 as.array(object$mcmc.draws$Rho),
 				 as.integer(K),
 				 as.integer(nT),
-				 as.integer(nkeep))
+				 as.integer(nkeep),
+				 as.logical(verbose))
 	class(gof) <- "gofnmr"
 	gof
 }

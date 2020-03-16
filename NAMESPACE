@@ -3,6 +3,8 @@ exportPattern("^[[:alpha:]]+")
 
 ## import other packages
 importFrom(Rcpp, evalCpp)
+import(coda)
 
 ## register S3 methods
 S3method(gof, bayesnmr)
+S3method(hpd, bayesnmr)

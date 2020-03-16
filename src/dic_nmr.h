@@ -7,40 +7,10 @@
 #include <RcppArmadillo.h>
 #include <progress.hpp>
 #include <progress_bar.hpp>
-#include <RcppNumerical.h>
 #include <Rdefines.h>
-// [[Rcpp::depends(RcppArmadillo, RcppProgress, RcppNumerical)]]
-using namespace Numer;
+#include <boost/math/quadrature/gauss_kronrod.hpp>
+// [[Rcpp::depends(RcppArmadillo, RcppProgress, BH)]]
 using namespace arma;
-
-class ObservedLik: public Func
-{
-private:
-	const int& Tk;
-	const arma::vec& resid;
-	const arma::mat& ZEREZ_S;
-	const double& nu;
-	const double& maxll;
-public:
-	ObservedLik(const int& Tk_,
-				const arma::vec& resid_,
-			    const arma::mat& ZEREZ_S_,
-			    const double& nu_,
-			    const double& maxll_) : Tk(Tk_), resid(resid_), ZEREZ_S(ZEREZ_S_), nu(nu_), maxll(maxll_) {}
-
-	double operator()(const double& lam) const {
-		double loglik = -M_LN_SQRT_2PI * static_cast<double>(Tk) + (0.5 * nu - 1.0) * lam - 0.5 * nu * lam + 0.5 * nu * (std::log(nu) - M_LN2) - R::lgammafn(0.5 * nu);
-		double logdet_val;
-		double logdet_sign;
-		log_det(logdet_val, logdet_sign, ZEREZ_S);
-		loglik -= 0.5 * (logdet_val + arma::accu(resid % arma::solve(ZEREZ_S, resid)));
-		/***********************************
-		subtract by maximum likelihood value
-		for numerical stability
-		***********************************/
-		return std::exp(loglik  - maxll);
-	}
-};
 
 /********************************
 negative log-likelihood of lambda
@@ -476,22 +446,6 @@ public:
 	}
 };
 
-double neg_loglik_lam(const arma::vec& lam,
-				  	  const double& nu,
-				  	  const arma::vec& resid_k, // = y_k - X_k * beta
-				  	  const arma::vec& Z_k,
-				  	  const arma::mat& ERE, // = E_k' * Rho * E_k
-				  	  const arma::vec& sig2_k);
-
-double int_observedlik(const int& Tk,
-					   const arma::vec& resid,
-			    	   const arma::vec& Z_k,
-			    	   const arma::mat& E_k,
-			    	   const arma::vec& sig2_k,
-			    	   const arma::mat& Rho,
-			    	   const double& nu,
-			    	   const double& maxll);
-
 Rcpp::List calc_modelfit(const arma::vec& y,
 						 const arma::mat& x,
 						 const arma::mat& z,
@@ -506,6 +460,7 @@ Rcpp::List calc_modelfit(const arma::vec& y,
 						 const arma::cube& Rhos,
 						 const int& K,
 						 const int& nT,
-						 const int& nkeep);
+						 const int& nkeep,
+						 const bool verbose);
 
 #endif

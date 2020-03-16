@@ -9,8 +9,12 @@
 #' @param nT number of treatments
 #' @param prior list of hyperparameters; when not given, algorithm will run in default setting
 #' @param mcmc list of MCMC-related parameters: number of burn-ins(nwarmup), number of thinning(nskip), and posterior sample size(nsave)
+#' @param add.z additional covariates other than the grouping vectors that should be column-concatenated to 'z'. This should have the same number of rows as 'y', and 'x'
+#' @param scale.x logical variable for scaling x. Default to TRUE. If not scaled, the gamma[1] (different than gam in the function) cannot be interpreted as placebo
+#' @param verbose logical variable for printing progress bar. Default to FALSE.
+#' @param init initial values for beta (ns + nT dimensional) and phi. Dimensions must be conformant.
 #' @export
-bayesnmr <- function(y, sd, x, ids, iarm, groupinfo, npt, prior = list(), mcmc = list(), add.z=list(), scale.x=TRUE) {
+bayesnmr <- function(y, sd, x, ids, iarm, npt, groupinfo=list(), prior = list(), mcmc = list(), add.z=list(), scale.x=TRUE, verbose=FALSE, init=list()) {
 
 	mcvals <- list(ndiscard = 5000L, nskip = 1L, nkeep = 20000L)
 	mcvals[names(mcmc)] = mcmc
@@ -25,25 +29,33 @@ bayesnmr <- function(y, sd, x, ids, iarm, groupinfo, npt, prior = list(), mcmc =
 	c01 <- priorvals$c01
 	c02 <- priorvals$c02
 
+	if (min(unique(iarm)) != 0) {
+		stop("The treatments should start from 0. Please adjust accordingly.")
+	}
+	nx <- ncol(x)
 	nz <- length(groupinfo)
 	ns <- length(y)
 	K <- length(unique(ids))
 	nT <- length(unique(iarm))
 	z <- matrix(0, ns, nz)
-	for (j in 1:nz) {
-		for (i in 1:ns) {
-			if (iarm[i] %in% groupinfo[[j]]) {
-				z[i,j] <- 1
+	if (nz > 0) {
+		for (j in 1:nz) {
+			for (i in 1:ns) {
+				if (iarm[i] %in% groupinfo[[j]]) {
+					z[i,j] <- 1
+				}
 			}
 		}
 	}
-	z <- cbind(1,z)
+	# z <- cbind(1,z)
 	if (length(add.z) > 0) {
 		z <- cbind(z, scale(add.z, center=TRUE, scale=TRUE))
 	}
 	if (scale.x) {
 		x <- scale(x, center = TRUE, scale = TRUE)
 	}
+	init_final <- list(beta = numeric(nx+nT), phi = numeric(ncol(z)), sig2 = rep(1, ns))
+	init_final[names(init)] <- init
 
 
 	mcmctime <- system.time({
@@ -62,7 +74,11 @@ bayesnmr <- function(y, sd, x, ids, iarm, groupinfo, npt, prior = list(), mcmc =
 					  as.integer(nT),
 					  as.integer(ndiscard),
 					  as.integer(nskip),
-					  as.integer(nkeep))
+					  as.integer(nkeep),
+					  as.logical(verbose),
+					  as.double(init_final$beta),
+					  as.double(init_final$phi),
+					  as.double(init_final$sig2))
 			})
 
 	out <- list(y = y,

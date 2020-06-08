@@ -8,7 +8,7 @@
 #' @param npt number of observations per trial
 #' @param nT number of treatments
 #' @param prior list of hyperparameters; when not given, algorithm will run in default setting
-#' @param mcmc list of MCMC-related parameters: number of burn-ins(nwarmup), number of thinning(nskip), and posterior sample size(nsave)
+#' @param mcmc list of MCMC-related parameters: number of burn-ins (ndiscard), number of thinning(nskip), and posterior sample size (nkeep)
 #' @param add.z additional covariates other than the grouping vectors that should be column-concatenated to 'z'. This should have the same number of rows as 'y', and 'x'
 #' @param scale.x logical variable for scaling x. Default to TRUE. If not scaled, the gamma[1] (different than gam in the function) cannot be interpreted as placebo
 #' @param verbose logical variable for printing progress bar. Default to FALSE.

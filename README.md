@@ -1,4 +1,23 @@
 ## How to use the package
+
+### Installation
+
+The package runs C++ behind the scenes, and therefore the computer on which this package will be used must have C++ compilers installed beforehand. Otherwise, the installation might fail.
+
+* **For Windows users** - Download and install [Rtools from the website](https://cran.r-project.org/bin/windows/Rtools/).
+* **For Mac users** - Please install the latest Xcode. It comes with all related compilers.
+* **For Linux** - Install `r-base-dev` through the package manager of your system. For example, on Ubuntu 18.04, run `apt install r-base-dev`. 
+
+After the compilers are ready, run the following to install the dependencies:
+```r
+install.packages("Rcpp", "RcppArmadillo", "RcppProgress", "BH")
+```
+When the packages above are successfully installed, run the following to install the `BayesMeta` packages:
+```r
+install.packages("BayesMeta_1.0.tar.gz", type="source", repo=NULL)
+```
+
+### Example Code
 ```r
 ##############
 # BNMR-HTMRe #

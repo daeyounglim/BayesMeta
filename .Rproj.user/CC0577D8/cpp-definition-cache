@@ -3,7 +3,7 @@
         "definitions" : [
         ],
         "file" : "G:/My Drive/UCONN/2020Spring/SIMrevision/BayesMeta/src/BayesNMR.cpp",
-        "file_last_write" : 1585622401.000000
+        "file_last_write" : 1591638725.000000
     },
     {
         "definitions" : [
@@ -15,13 +15,13 @@
         "definitions" : [
         ],
         "file" : "G:/My Drive/UCONN/2020Spring/SIMrevision/BayesMeta/src/dic_nmr.cpp",
-        "file_last_write" : 1589999258.000000
+        "file_last_write" : 1591638731.000000
     },
     {
         "definitions" : [
         ],
         "file" : "G:/My Drive/UCONN/2020Spring/SIMrevision/BayesMeta/src/lpml_nmr.cpp",
-        "file_last_write" : 1589998913.000000
+        "file_last_write" : 1591638738.000000
     },
     {
         "definitions" : [
@@ -40,11 +40,5 @@
         ],
         "file" : "G:/My Drive/UCONN/2020Spring/SIMrevision/BayesMeta/src/nelmin.hpp",
         "file_last_write" : 1585437994.000000
-    },
-    {
-        "definitions" : [
-        ],
-        "file" : "G:/My Drive/UCONN/2020Spring/SIMrevision/BayesMeta/src/testfun.cpp",
-        "file_last_write" : 1585597222.000000
     }
 ]

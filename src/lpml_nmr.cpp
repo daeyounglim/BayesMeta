@@ -20,7 +20,6 @@ Calculate the goodness of fit measures
 + DIC = Dev(thetabar) + 2 * p_D
 ***************************************************/
 
-// [[Rcpp::export]]
 Rcpp::List calc_modelfit_lpml(const arma::vec& y,
 						 const arma::mat& x,
 						 const arma::mat& z,

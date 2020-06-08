@@ -3,7 +3,7 @@
 ##############
 # BNMR-HTMRe #
 ##############
-groupinfo <- list(c(0,1), c(2,3), c(4))
+groupinfo <- list(c(0,1), c(2,3), c(4)) # define the variance structure
 fit <- bayesnmr(df$y, df$sd, x, df$ids, df$iarm, df$npt, groupinfo, prior = list(c01=1.0e05, c02=4, nu=3), mcmc=list(ndiscard=2500,nskip=1,nkeep=10000), init = list(beta = c(beta_true, gamma_true), sig2 = sig2_true))
 
 ## Get the estimates
@@ -12,8 +12,8 @@ beta.est <- rowMeans(fit$mcmc.draws$beta)
 phi.est <- rowMeans(fit$mcmc.draws$phi)
 
 ## Get 'goodness of fit (gof)'
-dic <- gof(out, type = "dic") # calculate DIC
-lpml <- gof(out, type = "lpml") # calculate LPML
+dic <- gof(fit, type = "dic") # calculate DIC
+lpml <- gof(fit, type = "lpml") # calculate LPML
 ```
 
 ### Inputs explained for `bayesnmr`

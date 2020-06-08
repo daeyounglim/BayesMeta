@@ -5,7 +5,15 @@ BayesNMR <- function(y, sd, x, z, ids, iarm, npt, nu, c01_inv, c02_inv, K, nT, n
     .Call(`_BayesMeta_BayesNMR`, y, sd, x, z, ids, iarm, npt, nu, c01_inv, c02_inv, K, nT, ndiscard, nskip, nkeep, verbose, beta_init, phi_init, sig2_init)
 }
 
-calc_modelfit <- function(y, x, z, ids, iarm, npt, nu, betas, sig2s, phis, lams, Rhos, K, nT, nkeep, verbose) {
-    .Call(`_BayesMeta_calc_modelfit`, y, x, z, ids, iarm, npt, nu, betas, sig2s, phis, lams, Rhos, K, nT, nkeep, verbose)
+calc_modelfit_dic <- function(y, x, z, ids, iarm, npt, nu, betas, sig2s, phis, lams, Rhos, K, nT, nkeep, verbose) {
+    .Call(`_BayesMeta_calc_modelfit_dic`, y, x, z, ids, iarm, npt, nu, betas, sig2s, phis, lams, Rhos, K, nT, nkeep, verbose)
+}
+
+calc_modelfit_lpml <- function(y, x, z, ids, iarm, npt, nu, betas, sig2s, phis, lams, Rhos, K, nT, nkeep, verbose) {
+    .Call(`_BayesMeta_calc_modelfit_lpml`, y, x, z, ids, iarm, npt, nu, betas, sig2s, phis, lams, Rhos, K, nT, nkeep, verbose)
+}
+
+testfun <- function(A, v) {
+    .Call(`_BayesMeta_testfun`, A, v)
 }
 

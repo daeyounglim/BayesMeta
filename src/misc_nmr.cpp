@@ -5,6 +5,29 @@
 #include "misc_nmr.h"
 // [[Rcpp::depends(RcppArmadillo)]]
 
+double loglik_lam(const double& eta_k,
+				  const double& nu,
+				  const arma::vec& resid_k, // = y_k - X_k * beta
+				  const arma::mat& ERE_k, // = Z(phi) *  E_k' * Rho * E_k * Z(phi)
+				  const arma::vec& sig2_k,
+				  const int& Tk) { 
+	using namespace arma;
+	using namespace Rcpp;
+	using namespace R;
+	using namespace std;
+
+	double lam_k = std::exp(eta_k);
+
+	double loglik = (0.5 * nu - 1.0) * eta_k - 0.5 * nu * lam_k + 0.5 * nu * (std::log(nu) - M_LN2) - R::lgammafn(0.5 * nu);
+	mat tmpmat = std::exp(-eta_k) * ERE_k;
+	tmpmat.diag() += sig2_k;
+	double logdet_val;
+	double logdet_sign;
+	log_det(logdet_val, logdet_sign, tmpmat);
+	loglik += -0.5 * logdet_val - 0.5 * arma::accu(resid_k % arma::solve(tmpmat, resid_k)) - M_LN_SQRT_2PI * static_cast<double>(Tk);
+	return loglik;
+}
+
 double loglik_eta(const double& eta_k,
 				  const double& nu,
 				  const arma::vec& resid_k, // = y_k - X_k * beta
@@ -62,7 +85,8 @@ double loglik_phi(const arma::vec& phi,
 	return loglik;
 }
 
-arma::mat pRho_to_Rho(arma::mat pRho) {
+
+arma::mat pRho_to_Rho(arma::mat& pRho) {
 	using namespace arma;
 	using namespace Rcpp;
 	using namespace R;
@@ -146,7 +170,7 @@ double loglik_z(const double& zprho,
 
 		loglik += -0.5 * logdet_val - 0.5 * arma::accu(resid_k % arma::solve(tmpmat, resid_k));
 	}
-	loglik += 0.5 * (static_cast<double>(nT - 1 - (index2 - index1))) *
+	loglik += 0.5 * (static_cast<double>(nT - 1 - std::abs(index2 - index1))) *
 			  std::log(1.0 - std::pow((std::exp(2.0*zprho)-1.0)/(std::exp(2.0*zprho)+1.0),2.0))+
      	      2.0*zprho - 2.0*std::log(std::exp(2.0*zprho)+1.0);
 	return loglik;

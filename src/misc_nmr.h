@@ -6,6 +6,13 @@
 #include <Rdefines.h>
 // [[Rcpp::depends(RcppArmadillo)]]
 
+double loglik_lam(const double& lam_k,
+				  const double& nu,
+				  const arma::vec& resid_k, // = y_k - X_k * beta
+				  const arma::mat& ERE_k, // = Z(phi) *  E_k' * Rho * E_k * Z(phi)
+				  const arma::vec& sig2_k,
+				  const int& Tk);
+
 double loglik_eta(const double& eta_k,
 				  const double& nu,
 				  const arma::vec& resid_k, // = y_k - X_k * beta
@@ -23,7 +30,7 @@ double loglik_phi(const arma::vec& phi,
 				  const arma::field<arma::mat>& Eks,
 				  const arma::field<arma::uvec>& idxks);
 
-arma::mat pRho_to_Rho(arma::mat pRho);
+arma::mat pRho_to_Rho(arma::mat& pRho);
 
 double loglik_z(const double& zprho,
 				const int& index1,

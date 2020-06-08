@@ -9,6 +9,7 @@
 #include <progress_bar.hpp>
 #include "ListBuilder.h"
 #include "misc_nmr.h"
+#include "nelmin.hpp"
 // [[Rcpp::depends(RcppArmadillo,RcppProgress))]]
 
 // [[Rcpp::export]]
@@ -49,27 +50,11 @@ Rcpp::List BayesNMR(const arma::vec& y,
 	/*************************
 	Parameters for adaptive MH
 	*************************/
-	const double obj_rate = 0.44;
-	const int batch_length = std::min(50, ndiscard+nkeep*nskip);
-	const int batch_total = (ndiscard + nskip*nkeep) / batch_length;
+	vec lam_rates(K, fill::zeros);
+	vec phi_rates(nz, fill::zeros);
+	mat Rho_rates(nT,nT, fill::zeros);
 
-	vec eta_accepts(K, fill::zeros);
-	mat eta_rates(K, batch_total, fill::zeros);
-	vec eta_tunings(K);
-	eta_tunings.fill(0.1);
-	int batch_num = 0;
 
-	vec phi_accepts(nz, fill::zeros);
-	mat phi_rates(nz, batch_total, fill::zeros);
-	vec phi_tunings(nz);
-	phi_tunings.fill(0.1);
-
-	mat Rho_accepts(nT,nT, fill::zeros);
-	cube Rho_rates(nT,nT,batch_total, fill::zeros);
-	mat Rho_tunings(nT,nT);
-	Rho_tunings.fill(0.1);
-
-	
 	/* make a list of y_k, X_k, z_k*/
 	arma::field<arma::mat> Xks(K);
 	arma::field<arma::mat> Eks(K);
@@ -104,12 +89,13 @@ Rcpp::List BayesNMR(const arma::vec& y,
 	}
 	vec resid = y - xb;
 	vec Rgam(ns, fill::zeros);
-	mat Rho(nT,nT, fill::zeros);
 	mat pRho(nT,nT, fill::zeros);
+	mat Rho(nT,nT, fill::zeros);
 	for (int i = 0; i < nT; ++i) {
-		Rho(i,i) = 1.0;
 		pRho(i,i) = 1.0;
 	}
+	Rho = pRho_to_Rho(pRho);
+
 
 	vec Z = arma::exp(z * phi);
 
@@ -178,18 +164,64 @@ Rcpp::List BayesNMR(const arma::vec& y,
 					vec resid_k = resid(idx);
 					mat E_k = Eks(k);
 					vec z_k = Z(idx);
+					double lam_k = lam(k);
 					mat ERE_k = E_k.t() * Rho * E_k;
 
-					double eta_k = std::log(lam(k));
-					double eta_prop = ::norm_rand() * std::exp(eta_tunings(k)) + eta_k;
+					auto fx_lam = [&](double eta_input[])->double {
+						return -loglik_eta(eta_input[0], nu, resid_k, z_k, ERE_k, sig2_k);
+					};
+
+					double start[] = { std::log(lam_k) };
+					double xmin[] = { 0.0 };
+					double ynewlo = 0.0;
+					double reqmin = 1.0e-20;
+					int konvge = 5;
+					int kcount = 1000;
+					double step[] = { 0.2 };
+					int icount = 0;
+					int numres = 0;
+					int ifault = 0;
+					nelmin(fx_lam, 1, start, xmin, &ynewlo, reqmin, step, konvge, kcount, &icount, &numres, &ifault);
+
+					double minll = ynewlo;
+					double xmax = xmin[0];
+
+					mat cl(5,3, fill::zeros);
+					vec dl(5, fill::zeros);
+					double step_size = 0.5;
+					eta_burnin_block:
+						for (int iii=0; iii < 5; ++iii) {
+							double e1 = static_cast<double>(iii-2);
+							cl(iii,0) = std::pow(xmax + e1 * step_size, 2.0);
+							cl(iii,1) = xmax + e1 * step_size;
+							cl(iii,2) = 1.0;
+							dl(iii) = -loglik_eta(xmax + e1 * step_size, nu, resid_k, z_k, ERE_k, sig2_k);
+						}
+
+					for (int ni=0; ni < 5; ++ni) {
+						if ((ni+1) != 3) {
+							if (dl(ni) <= minll) {
+								step_size *= 1.5;
+								goto eta_burnin_block;
+							}
+						}
+					}
+					vec fl = solve(cl.t() * cl,  cl.t() * dl);
+					double sigmaa = std::sqrt(0.5 / fl(0));
+
+
+
+					double eta_k = std::log(lam_k);
+					double eta_prop = ::norm_rand() * sigmaa + xmax;
 					
 					// log-likelihood difference
 					double ll_diff = loglik_eta(eta_prop, nu, resid_k, z_k, ERE_k, sig2_k) - 
-									loglik_eta(eta_k, nu, resid_k, z_k, ERE_k, sig2_k);
+									loglik_eta(eta_k, nu, resid_k, z_k, ERE_k, sig2_k) -
+									0.5 * (std::pow(eta_k - xmax, 2.0) - std::pow(eta_prop - xmax, 2.0)) / std::pow(sigmaa, 2.0);
 
 					if (std::log(::unif_rand()) < ll_diff) {
 						lam(k) = std::exp(eta_prop);
-						++eta_accepts(k);
+						++lam_rates(k);
 					}
 				}
 			}
@@ -200,14 +232,79 @@ Rcpp::List BayesNMR(const arma::vec& y,
 			*********/
 			for (int g=0; g < nz; ++g) {
 				vec phi_prop = phi;
-				phi_prop(g) = ::norm_rand() * std::exp(phi_tunings(g)) + phi(g);
+				auto fx = [&](double phig[])->double {
+					phi_prop(g) = phig[0];
+					vec Z = arma::exp(z * phi_prop);
+					const int K = Eks.n_elem;
+					double loglik = -0.5 * c02_inv * arma::accu(phi_prop % phi_prop);
+					for (int k=0; k < K; ++k) {
+						uvec idx_k = idxks(k);
+						mat Z_k = arma::diagmat(Z(idx_k));
+						vec sig2_k = sig2(idx_k) / npt(idx_k);
+						mat E_k = Eks(k);
+						mat ERE = E_k.t() * Rho * E_k;
+						vec resid_k = resid(idx_k);
+
+
+						mat tmpmat = Z_k * ERE * Z_k / lam(k);
+						tmpmat.diag() += sig2_k;
+						double logdet_val;
+						double logdet_sign;
+						log_det(logdet_val, logdet_sign, tmpmat);
+
+						loglik += -0.5 * logdet_val - 0.5 * arma::accu(resid_k % arma::solve(tmpmat, resid_k));
+					}
+					return -loglik;
+				};
+				double start[] = { phi(g) };
+				double xmin[] = { 0.0 };
+				double ynewlo = 0.0;
+				double reqmin = 1.0e-20;
+				int konvge = 5;
+				int kcount = 1000;
+				double step[] = { 0.05 };
+				int icount = 0;
+				int numres = 0;
+				int ifault = 0;
+				nelmin(fx, 1, start, xmin, &ynewlo, reqmin, step, konvge, kcount, &icount, &numres, &ifault);
+
+				double xmax = xmin[0];
+				double minll = ynewlo;
+
+				mat cl(5,3, fill::zeros);
+				vec dl(5, fill::zeros);
+				double step_size = 0.5;
+				phi_burnin_block:
+					for (int iii=0; iii < 5; ++iii) {
+						double e1 = static_cast<double>(iii-2);
+						cl(iii,0) = std::pow(xmax + e1 * step_size, 2.0);
+						cl(iii,1) = xmax + e1 * step_size;
+						cl(iii,2) = 1.0;
+						phi_prop(g) = xmax + e1 * step_size;
+						dl(iii) = -loglik_phi(phi_prop, z, c02_inv, lam, sig2 / npt, Rho, resid, Eks, idxks);
+					}
+
+				for (int ni=0; ni < 5; ++ni) {
+					if ((ni+1) != 3) {
+						if (dl(ni) <= minll) {
+							step_size *= 1.5;
+							goto phi_burnin_block;
+						}
+					}
+				}
+
+				vec fl = solve(cl.t() * cl, cl.t() * dl);
+				double sigmaa = std::sqrt(0.5 / fl(0));
+
+				phi_prop(g) = ::norm_rand() * sigmaa + xmax;
 
 				// log-likelihood difference
 				double ll_diff = loglik_phi(phi_prop, z, c02_inv, lam, sig2 / npt, Rho, resid, Eks, idxks) -
-						  loglik_phi(phi, z, c02_inv, lam, sig2 / npt, Rho, resid, Eks, idxks);
+						  loglik_phi(phi, z, c02_inv, lam, sig2 / npt, Rho, resid, Eks, idxks) -
+						  0.5 * (std::pow(phi(g) - xmax, 2.0) - std::pow(phi_prop(g) - xmax, 2.0)) / std::pow(sigmaa, 2.0);
 				if (std::log(::unif_rand()) < ll_diff) {
 					phi(g) = phi_prop(g);
-					++phi_accepts(g);
+					++phi_rates(g);
 				}
 			}
 			Z = arma::exp(z * phi);
@@ -219,16 +316,60 @@ Rcpp::List BayesNMR(const arma::vec& y,
 			for (int iR=0; iR < nT-1; ++iR) {
 				for (int iC=iR+1; iC < nT; ++iC) {
 					double zprho = 0.5 * std::log((1.0 + pRho(iR,iC)) / (1.0 - pRho(iR,iC)));
-					double zprho_prop = ::norm_rand() * std::exp(Rho_tunings(iR,iC)) + zprho;
+					auto fx_rho = [&](double zprho_input[])->double {
+						return -loglik_z(zprho_input[0], iR, iC, pRho, lam, sig2 / npt, Z, resid, Eks, idxks);
+					};
+
+					double start[] = { zprho };
+					double xmin[] = { 0.0 };
+					double ynewlo = 0.0;
+					double reqmin = 1.0e-20;
+					int konvge = 5;
+					int kcount = 1000;
+					double step[] = { 0.02 };
+					int icount = 0;
+					int numres = 0;
+					int ifault = 0;
+					nelmin(fx_rho, 1, start, xmin, &ynewlo, reqmin, step, konvge, kcount, &icount, &numres, &ifault);
+					double xmax = xmin[0];
+					double minll = ynewlo;
+
+					mat cl(5,3, fill::zeros);
+					vec dl(5, fill::zeros);
+					double step_size = 0.2;
+					Rho_burnin_block:
+						for (int iii=0; iii < 5; ++iii) {
+							double e1 = static_cast<double>(iii-2);
+							cl(iii,0) = std::pow(xmax + e1 * step_size, 2.0);
+							cl(iii,1) = xmax + e1 * step_size;
+							cl(iii,2) = 1.0;
+							dl(iii) = -loglik_z(xmax + e1 * step_size, iR, iC, pRho, lam, sig2 / npt, Z, resid, Eks, idxks);
+						}
+
+					for (int ni=0; ni < 5; ++ni) {
+						if ((ni+1) != 3) {
+							if (dl(ni) <= minll) {
+								step_size *= 1.2;
+								goto Rho_burnin_block;
+							}
+						}
+					}
+
+					vec fl = arma::solve(cl.t() * cl, cl.t() * dl);
+					double sigmaa = std::sqrt(0.5 / fl(0));
+
+
+					double zprho_prop = ::norm_rand() * sigmaa + xmax;
 
 					// log-likelihood difference
 					double ll_diff = loglik_z(zprho_prop, iR, iC, pRho, lam, sig2 / npt, Z, resid, Eks, idxks) -
-									 loglik_z(zprho, iR, iC, pRho, lam, sig2 / npt, Z, resid, Eks, idxks);
+									 loglik_z(zprho, iR, iC, pRho, lam, sig2 / npt, Z, resid, Eks, idxks) -
+									 0.5 * (std::pow(zprho - xmax, 2.0) - std::pow(zprho_prop - xmax, 2.0)) / std::pow(sigmaa, 2.0);
 					if (std::log(::unif_rand()) < ll_diff) {
 						pRho(iR,iC) = (std::exp(2.0 * zprho_prop) - 1.0) / (std::exp(2.0 * zprho_prop) + 1.0);
 						pRho(iC,iR) = pRho(iR,iC);
 						Rho = pRho_to_Rho(pRho);
-						++Rho_accepts(iR,iC);
+						++Rho_rates(iR,iC);
 					}
 				}
 			}
@@ -256,44 +397,6 @@ Rcpp::List BayesNMR(const arma::vec& y,
 				Rgam(idx) = muRgam + arma::solve(arma::trimatu(SigRgamiChol), gtmp);
 			}
 
-			if ((idiscard+1) % batch_length == 0) {
-				Rho_accepts /= static_cast<double>(batch_length);
-				Rho_rates.slice(batch_num) = Rho_accepts;
-				for (int iR=0; iR < nT-1; ++iR) {
-					for (int iC=iR+1; iC < nT; ++iC) {
-						if (Rho_accepts(iR,iC) > obj_rate) {
-							Rho_tunings(iR,iC) += std::min(0.01, 1.0 / std::sqrt(static_cast<double>(batch_num+1)));
-						} else {
-							Rho_tunings(iR,iC) -= std::min(0.01, 1.0 / std::sqrt(static_cast<double>(batch_num+1)));
-						}
-					}
-				}
-
-				eta_accepts /= static_cast<double>(batch_length);
-				eta_rates.col(batch_num) = eta_accepts;
-				for (int i=0; i<K; ++i) {
-					if (eta_accepts(i) > obj_rate) {
-						eta_tunings(i) += std::min(0.01, 1.0 / std::sqrt(static_cast<double>(batch_num+1)));
-					} else {
-						eta_tunings(i) -= std::min(0.01, 1.0 / std::sqrt(static_cast<double>(batch_num+1)));
-
-					}
-				}
-
-				phi_accepts /= static_cast<double>(batch_length);
-				phi_rates.col(batch_num) = phi_accepts;
-				for (int i=0; i<nz; ++i) {
-					if (phi_accepts(i) > obj_rate) {
-						phi_tunings(i) += std::min(0.01, 1.0 / std::sqrt(static_cast<double>(batch_num+1)));
-					} else {
-						phi_tunings(i) -= std::min(0.01, 1.0 / std::sqrt(static_cast<double>(batch_num+1)));
-					}
-				}
-				++batch_num;
-				Rho_accepts.fill(0.0);
-				eta_accepts.fill(0.0);
-				phi_accepts.fill(0.0);
-			}
 			prog.increment();
 		}
 	}
@@ -301,15 +404,13 @@ Rcpp::List BayesNMR(const arma::vec& y,
 	/***********************
 	Begin posterior sampling
 	***********************/
-	mat beta_save(nx+nT, nkeep);
-	mat sig2_save(ns, nkeep);
-	mat lam_save(K, nkeep);
-	mat phi_save(nz, nkeep);
-	cube Rho_save(nT,nT,nkeep);
-	mat gam_save(ns, nkeep);
+	mat beta_save(nx+nT, nkeep, arma::fill::zeros);
+	mat sig2_save(ns, nkeep, arma::fill::zeros);
+	mat lam_save(K, nkeep, arma::fill::zeros);
+	mat phi_save(nz, nkeep, arma::fill::zeros);
+	cube Rho_save(nT,nT,nkeep, arma::fill::zeros);
+	mat gam_save(ns, nkeep, arma::fill::zeros);
 
-
-	int icount_mh = ndiscard;
 	if (verbose) {
 		Rcout << "Saving posterior samples" << endl;
 	}
@@ -321,7 +422,6 @@ Rcpp::List BayesNMR(const arma::vec& y,
 				return Rcpp::List::create(Rcpp::Named("error") = "user interrupt aborted");
 			}
 			for (int iskip=0; iskip < nskip; ++iskip) {
-				++icount_mh;
 				/**********
 				Sample sig2
 				**********/
@@ -351,6 +451,7 @@ Rcpp::List BayesNMR(const arma::vec& y,
 				SigBetainv.diag() += c01_inv;
 				SigBetainv = 0.5 * (SigBetainv + SigBetainv.t());
 				mat SigBetainvChol = chol(SigBetainv);
+				
 				vec muBeta = arma::solve(arma::trimatu(SigBetainvChol), arma::solve(trimatl(SigBetainvChol.t()), muBetaTmp));
 				vec btmp(nx+nT);
 				std::generate(btmp.begin(), btmp.end(), ::norm_rand);
@@ -373,20 +474,67 @@ Rcpp::List BayesNMR(const arma::vec& y,
 						vec resid_k = resid(idx);
 						mat E_k = Eks(k);
 						vec z_k = Z(idx);
+						double lam_k = lam(k);
 						mat ERE_k = E_k.t() * Rho * E_k;
 
+			            auto fx_lam = [&](double eta_input[])->double {
+			              return -loglik_eta(eta_input[0], nu, resid_k, z_k, ERE_k, sig2_k);
+			            };
+
+			            double start[] = { std::log(lam_k) };
+			            double xmin[] = { 0.0 };
+			            double ynewlo = 0.0;
+			            double reqmin = 1.0e-20;
+			            int konvge = 5;
+			            int kcount = 1000;
+			            double step[] = { 0.2 };
+			            int icount = 0;
+			            int numres = 0;
+			            int ifault = 0;
+			            nelmin(fx_lam, 1, start, xmin, &ynewlo, reqmin, step, konvge, kcount, &icount, &numres, &ifault);
+						double minll = ynewlo;
+						double xmax = xmin[0];
+
+						mat cl(5,3, fill::zeros);
+						vec dl(5, fill::zeros);
+						double step_size = 0.5;
+						eta_sample_block:
+							for (int iii=0; iii < 5; ++iii) {
+								double e1 = static_cast<double>(iii-2);
+								cl(iii,0) = std::pow(xmax + e1 * step_size, 2.0);
+								cl(iii,1) = xmax + e1 * step_size;
+								cl(iii,2) = 1.0;
+								dl(iii) = -loglik_eta(xmax + e1 * step_size, nu, resid_k, z_k, ERE_k, sig2_k);
+							}
+
+						for (int ni=0; ni < 5; ++ni) {
+							if ((ni+1) != 3) {
+								if (dl(ni) <= minll) {
+									step_size *= 1.5;
+									goto eta_sample_block;
+								}
+							}
+						}
+
+						// mat clinv = arma::solve(cl.t() * cl);
+						vec fl = solve(cl.t() * cl, cl.t() * dl);
+						double sigmaa = std::sqrt(0.5 / fl(0));
+
+
+
 						double eta_k = std::log(lam(k));
-						double eta_prop = ::norm_rand() * std::exp(eta_tunings(k)) + eta_k;
+						double eta_prop = ::norm_rand() * sigmaa + xmax;
 						
 						// log-likelihood difference
 						double ll_diff = loglik_eta(eta_prop, nu, resid_k, z_k, ERE_k, sig2_k) - 
-										loglik_eta(eta_k, nu, resid_k, z_k, ERE_k, sig2_k);
+										loglik_eta(eta_k, nu, resid_k, z_k, ERE_k, sig2_k) -
+										0.5 * (std::pow(eta_k - xmax, 2.0) - std::pow(eta_prop - xmax, 2.0)) / std::pow(sigmaa, 2.0);
 
 						if (std::log(::unif_rand()) < ll_diff) {
 							lam(k) = std::exp(eta_prop);
-							++eta_accepts(k);
+							++lam_rates(k);
 						}
-					}					
+					}
 				}
 
 
@@ -395,18 +543,80 @@ Rcpp::List BayesNMR(const arma::vec& y,
 				*********/
 				for (int g=0; g < nz; ++g) {
 					vec phi_prop = phi;
-					phi_prop(g) = ::norm_rand() * std::exp(phi_tunings(g)) + phi(g);
+					auto fx = [&](double phig[])->double {
+						phi_prop(g) = phig[0];
+						vec Z = arma::exp(z * phi_prop);
+						const int K = Eks.n_elem;
+						double loglik = -0.5 * c02_inv * arma::accu(phi_prop % phi_prop);
+						for (int k=0; k < K; ++k) {
+							uvec idx_k = idxks(k);
+							mat Z_k = arma::diagmat(Z(idx_k));
+							vec sig2_k = sig2(idx_k) / npt(idx_k);
+							mat E_k = Eks(k);
+							mat ERE = E_k.t() * Rho * E_k;
+							vec resid_k = resid(idx_k);
+
+							mat tmpmat = Z_k * ERE * Z_k / lam(k);
+							tmpmat.diag() += sig2_k;
+							double logdet_val;
+							double logdet_sign;
+							log_det(logdet_val, logdet_sign, tmpmat);
+
+							loglik += -0.5 * logdet_val - 0.5 * arma::accu(resid_k % arma::solve(tmpmat, resid_k));
+						}
+						return -loglik;
+					};
+					double start[] = { phi(g) };
+					double xmin[] = { 0.0 };
+					double ynewlo = 0.0;
+					double reqmin = 1.0e-20;
+					int konvge = 5;
+					int kcount = 1000;
+					double step[] = { 0.05 };
+					int icount = 0;
+					int numres = 0;
+					int ifault = 0;
+					nelmin(fx, 1, start, xmin, &ynewlo, reqmin, step, konvge, kcount, &icount, &numres, &ifault);
+					double xmax = xmin[0];
+					double minll = ynewlo;
+
+					mat cl(5,3, fill::zeros);
+					vec dl(5, fill::zeros);
+					double step_size = 0.5;
+					phi_sample_block:
+						for (int iii=0; iii < 5; ++iii) {
+							double e1 = static_cast<double>(iii-2);
+							cl(iii,0) = std::pow(xmax + e1 * step_size, 2.0);
+							cl(iii,1) = xmax + e1 * step_size;
+							cl(iii,2) = 1.0;
+							phi_prop(g) = xmax + e1 * step_size;
+							dl(iii) = -loglik_phi(phi_prop, z, c02_inv, lam, sig2 / npt, Rho, resid, Eks, idxks);
+						}
+
+					for (int ni=0; ni < 5; ++ni) {
+						if ((ni+1) != 3) {
+							if (dl(ni) <= minll) {
+								step_size *= 1.5;
+								goto phi_sample_block;
+							}
+						}
+					}
+
+					vec fl = solve(cl.t() * cl, cl.t() * dl);
+					double sigmaa = std::sqrt(0.5 / fl(0));
+
+					phi_prop(g) = ::norm_rand() * sigmaa + xmax;
 
 					// log-likelihood difference
 					double ll_diff = loglik_phi(phi_prop, z, c02_inv, lam, sig2 / npt, Rho, resid, Eks, idxks) -
-							  loglik_phi(phi, z, c02_inv, lam, sig2 / npt, Rho, resid, Eks, idxks);
+							  loglik_phi(phi, z, c02_inv, lam, sig2 / npt, Rho, resid, Eks, idxks) -
+							  0.5 * (std::pow(phi(g) - xmax, 2.0) - std::pow(phi_prop(g) - xmax, 2.0)) / std::pow(sigmaa, 2.0);
 					if (std::log(::unif_rand()) < ll_diff) {
 						phi(g) = phi_prop(g);
-						++phi_accepts(g);
+						++phi_rates(g);
 					}
 				}
 				Z = arma::exp(z * phi);
-
 
 				/*********
 				Sample Rho
@@ -414,16 +624,59 @@ Rcpp::List BayesNMR(const arma::vec& y,
 				for (int iR=0; iR < nT-1; ++iR) {
 					for (int iC=iR+1; iC < nT; ++iC) {
 						double zprho = 0.5 * std::log((1.0 + pRho(iR,iC)) / (1.0 - pRho(iR,iC)));
-						double zprho_prop = ::norm_rand() * std::exp(Rho_tunings(iR,iC)) + zprho;
+			            auto fx_rho = [&](double zprho_input[])->double {
+			              return -loglik_z(zprho_input[0], iR, iC, pRho, lam, sig2 / npt, Z, resid, Eks, idxks);
+			            };
+
+			            double start[] = { zprho };
+			            double xmin[] = { 0.0 };
+			            double ynewlo = 0.0;
+			            double reqmin = 1.0e-20;
+			            int konvge = 5;
+			            int kcount = 1000;
+			            double step[] = { 0.02 };
+			            int icount = 0;
+			            int numres = 0;
+			            int ifault = 0;
+			            nelmin(fx_rho, 1, start, xmin, &ynewlo, reqmin, step, konvge, kcount, &icount, &numres, &ifault);
+			            double xmax = xmin[0];
+			            double minll = ynewlo;
+
+						mat cl(5,3, fill::zeros);
+						vec dl(5, fill::zeros);
+						double step_size = 0.5;
+						Rho_sample_block:
+							for (int iii=0; iii < 5; ++iii) {
+								double e1 = static_cast<double>(iii-2);
+								cl(iii,0) = std::pow(xmax + e1 * step_size, 2.0);
+								cl(iii,1) = xmax + e1 * step_size;
+								cl(iii,2) = 1.0;
+								dl(iii) = -loglik_z(xmax + e1 * step_size, iR, iC, pRho, lam, sig2 / npt, Z, resid, Eks, idxks);
+							}
+
+						for (int ni=0; ni < 5; ++ni) {
+							if ((ni+1) != 3) {
+								if (dl(ni) <= minll) {
+									step_size *= 1.2;
+									goto Rho_sample_block;
+								}
+							}
+						}
+						vec fl = arma::solve(cl.t() * cl, cl.t() * dl);
+						double sigmaa = std::sqrt(0.5 / fl(0));
+
+
+						double zprho_prop = ::norm_rand() * sigmaa + xmax;
 
 						// log-likelihood difference
 						double ll_diff = loglik_z(zprho_prop, iR, iC, pRho, lam, sig2 / npt, Z, resid, Eks, idxks) -
-										 loglik_z(zprho, iR, iC, pRho, lam, sig2 / npt, Z, resid, Eks, idxks);
+										 loglik_z(zprho, iR, iC, pRho, lam, sig2 / npt, Z, resid, Eks, idxks) -
+										 0.5 * (std::pow(zprho - xmax, 2.0) - std::pow(zprho_prop - xmax, 2.0)) / std::pow(sigmaa, 2.0);
 						if (std::log(::unif_rand()) < ll_diff) {
 							pRho(iR,iC) = (std::exp(2.0 * zprho_prop) - 1.0) / (std::exp(2.0 * zprho_prop) + 1.0);
 							pRho(iC,iR) = pRho(iR,iC);
 							Rho = pRho_to_Rho(pRho);
-							++Rho_accepts(iR,iC);
+							++Rho_rates(iR,iC);
 						}
 					}
 				}
@@ -449,46 +702,6 @@ Rcpp::List BayesNMR(const arma::vec& y,
 					std::generate(gtmp.begin(), gtmp.end(), ::norm_rand);
 					Rgam(idx) = muRgam + arma::solve(arma::trimatu(SigRgamiChol), gtmp);
 				}
-
-
-				if (icount_mh % batch_length == 0) {
-					Rho_accepts /= static_cast<double>(batch_length);
-					Rho_rates.slice(batch_num) = Rho_accepts;
-					for (int iR=0; iR < nT-1; ++iR) {
-						for (int iC=iR+1; iC < nT; ++iC) {
-							if (Rho_accepts(iR,iC) > obj_rate) {
-								Rho_tunings(iR,iC) += std::min(0.01, 1.0 / std::sqrt(static_cast<double>(batch_num+1)));
-							} else {
-								Rho_tunings(iR,iC) -= std::min(0.01, 1.0 / std::sqrt(static_cast<double>(batch_num+1)));
-							}
-						}
-					}
-
-					eta_accepts /= static_cast<double>(batch_length);
-					eta_rates.col(batch_num) = eta_accepts;
-					for (int i=0; i<K; ++i) {
-						if (eta_accepts(i) > obj_rate) {
-							eta_tunings(i) += std::min(0.01, 1.0 / std::sqrt(static_cast<double>(batch_num+1)));
-						} else {
-							eta_tunings(i) -= std::min(0.01, 1.0 / std::sqrt(static_cast<double>(batch_num+1)));
-
-						}
-					}
-
-					phi_accepts /= static_cast<double>(batch_length);
-					phi_rates.col(batch_num) = phi_accepts;
-					for (int i=0; i<nz; ++i) {
-						if (phi_accepts(i) > obj_rate) {
-							phi_tunings(i) += std::min(0.01, 1.0 / std::sqrt(static_cast<double>(batch_num+1)));
-						} else {
-							phi_tunings(i) -= std::min(0.01, 1.0 / std::sqrt(static_cast<double>(batch_num+1)));
-						}
-					}
-					++batch_num;
-					Rho_accepts.fill(0.0);
-					eta_accepts.fill(0.0);
-					phi_accepts.fill(0.0);
-				}
 			}
 			beta_save.col(ikeep) = beta;
 			phi_save.col(ikeep) = phi;
@@ -502,6 +715,10 @@ Rcpp::List BayesNMR(const arma::vec& y,
 		}
 	}
 
+	Rho_rates /= static_cast<double>(ndiscard+nkeep*nskip);
+	phi_rates /= static_cast<double>(ndiscard+nkeep*nskip);
+	lam_rates /= static_cast<double>(ndiscard+nkeep*nskip);
+
 	return ListBuilder()
 	.add("beta", beta_save)
 	.add("phi", phi_save)
@@ -509,7 +726,7 @@ Rcpp::List BayesNMR(const arma::vec& y,
 	.add("sig2", sig2_save)
 	.add("Rho", Rho_save)
 	.add("gam", gam_save)
-	.add("Rho_mh", Rho_rates)
-	.add("eta_mh", eta_rates)
-	.add("phi_mh", phi_rates);
+	.add("Rho_acceptance", Rho_rates)
+	.add("lam_acceptance", lam_rates)
+	.add("phi_acceptance", phi_rates);
 }

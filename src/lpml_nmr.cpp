@@ -7,7 +7,7 @@
 #include <progress_bar.hpp>
 #include <Rdefines.h>
 #include <boost/math/quadrature/gauss_kronrod.hpp>
-#include "nelmin.hpp"
+#include "nelmin.h"
 #include "misc_nmr.h"
 // [[Rcpp::depends(RcppArmadillo, RcppProgress, BH)]]
 using namespace arma;
@@ -19,6 +19,7 @@ Calculate the goodness of fit measures
 + p_D = E[Dev(theta)] - Dev(thetabar)
 + DIC = Dev(thetabar) + 2 * p_D
 ***************************************************/
+
 
 Rcpp::List calc_modelfit_lpml(const arma::vec& y,
 						 const arma::mat& x,

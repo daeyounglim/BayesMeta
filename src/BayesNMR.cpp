@@ -9,7 +9,7 @@
 #include <progress_bar.hpp>
 #include "ListBuilder.h"
 #include "misc_nmr.h"
-#include "nelmin.hpp"
+#include "nelmin.h"
 // [[Rcpp::depends(RcppArmadillo,RcppProgress))]]
 
 Rcpp::List BayesNMR(const arma::vec& y,

@@ -52,6 +52,33 @@ lpml <- gof(fit, type = "lpml") # calculate LPML
 * `verbose` - logical variable for printing progress bar. Default to `FALSE`.
 * `init` - initial values for beta (`ns + nT` dimensional) and phi. Dimensions must be conformant.
 
+## `R` Package Development Reminders
+
+* When creating an R package, don't forget to register the native symbols by running the following:
+```r
+tools::package_native_routine_registration_skeleton(".", "src/init.c", character_only=FALSE)
+```
+
+* When put datasets in the package, use `usethis::use_data_raw()` to create `data-raw/` folder and after preparing the dataset, say `df`, run the following:
+```r
+devtools::use_data(df)
+```
+Then, the convention is to document the datasets in `R/data.R` in the format of
+```r
+#' Data from Experiment 1
+#'
+#' This is data from the first experiment ever to try XYZ using Mechanical
+#' Turk workers.
+#'
+#' @format A data frame with NNNN rows and NN variables:
+#' \describe{
+#'   \item{subject}{Anonymized Mechanical Turk Worker ID}
+#'   \item{trial}{Trial number, from 1..NNN}
+#'   ...
+#' }
+"df"
+```
+
 ## To do
 
 - [x] MCMC for ***Bayesian Network Meta-Regression Hierarchical Models Using Heavy-Tailed Multivariate Random Effects with Covariate-Dependent Variances (BNMR-HTMRe)***
@@ -60,3 +87,6 @@ lpml <- gof(fit, type = "lpml") # calculate LPML
 - [ ] R functions such as `fitted`, `print`, `summary`, `plot` for each class
 - [ ] MCMC for ***Li, H., Chen, M. H., Ibrahim, J. G., Kim, S., Shah, A. K., Lin, J., & Tershakovec, A. M. (2019). Bayesian inference for network meta-regression using multivariate random effects with applications to cholesterol lowering drugs. Biostatistics, 20(3), 499-516.***
 - [ ] MCMC for ***Bayesian Flexible Hierarchical Skew Heavy-Tailed Multivariate Meta Regression Models for Individual Patient Data with Applications***
+
+
+

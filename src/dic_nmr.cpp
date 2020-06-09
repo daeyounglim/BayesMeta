@@ -7,7 +7,7 @@
 #include <progress_bar.hpp>
 #include <Rdefines.h>
 #include <boost/math/quadrature/gauss_kronrod.hpp>
-#include "nelmin.hpp"
+#include "nelmin.h"
 #include "misc_nmr.h"
 // [[Rcpp::depends(RcppArmadillo, RcppProgress, BH)]]
 using namespace arma;

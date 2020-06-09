@@ -1,3 +1,8 @@
+#' get goodness of fit 
+#' @param object the output model from fitting a meta analysis/regression model
+#' @param type the type of goodness of fit to compute; DIC or LPML
+#' @param verbose FALSE by default; If TRUE, then progress bar will appear
+
 "gof.bayesnmr" <- function(object, type="lpml", verbose=FALSE) {
 	y <- object$y
 	npt <- object$npt
@@ -11,7 +16,8 @@
 	nu <- object$prior$nu
 
 	if (type == "dic") {
-		gof <- .Call(`_BayesMeta_calc_modelfit_dic`,
+		gof <- .Call(`calc_modelfit_dic`,
+					 PACKAGE='BayesMeta',
 					 as.double(y),
 					 as.matrix(x),
 					 as.matrix(z),
@@ -29,7 +35,8 @@
 					 as.integer(nkeep),
 					 as.logical(verbose))
 	} else if (type == "lpml") {
-		gof <- .Call(`_BayesMeta_calc_modelfit_lpml`,
+		gof <- .Call(`calc_modelfit_lpml`,
+					 PACKAGE='BayesMeta',
 					 as.double(y),
 					 as.matrix(x),
 					 as.matrix(z),

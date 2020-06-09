@@ -1,3 +1,8 @@
+#' get the highest posterior density (HPD) interval
+#' @param object the output model from fitting a meta analysis/regression model
+#' @param prob the probability which the HPD interval will cover
+#' @return dataframe containing HPD intervals for the parameters
+
 "hpd.bayesnmr" <- function(object, prob = 0.95) {
 	out <- list()
 	out$beta.hpd <- coda::HPDinterval(mcmc(t(object$mcmc.draws$beta), end=object$mcmc$nkeep), prob=prob)

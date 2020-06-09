@@ -1,18 +1,30 @@
+#' Fit Bayesian Network Meta-Regression Hierarchical Models Using Heavy-Tailed Multivariate Random Effects with Covariate-Dependent Variances
+#' 
+#' This is a function for running the Markov chain Monte Carlo algorithm for the BNMHHtMRe Model. The first six arguments are required.
 #' @author Daeyoung Lim, \email{daeyoung.lim@uconn.edu}
 #' @param y aggregate mean of the responses for each arm of each study
 #' @param sd standard deviation of the responses for each arm of each study
 #' @param x aggregate covariates for the mean component
 #' @param ids study number in integers
 #' @param iarm arm number of each study
-#' @param groupinfo list of grouping information; the control(baseline) group must start from 0; the aggregate covariates 'z' explaining the variance of the random effect of the t-th treatment will be construct based on this grouping information
 #' @param npt number of observations per trial
-#' @param nT number of treatments
+#' @param groupinfo list of grouping information; the control(baseline) group must start from 0; the aggregate covariates 'z' explaining the variance of the random effect of the t-th treatment will be construct based on this grouping information
 #' @param prior list of hyperparameters; when not given, algorithm will run in default setting
 #' @param mcmc list of MCMC-related parameters: number of burn-ins (ndiscard), number of thinning(nskip), and posterior sample size (nkeep)
 #' @param add.z additional covariates other than the grouping vectors that should be column-concatenated to 'z'. This should have the same number of rows as 'y', and 'x'
 #' @param scale.x logical variable for scaling x. Default to TRUE. If not scaled, the gamma[1] (different than gam in the function) cannot be interpreted as placebo
 #' @param verbose logical variable for printing progress bar. Default to FALSE.
 #' @param init initial values for beta (ns + nT dimensional) and phi. Dimensions must be conformant.
+#' @return a dataframe with input arguments, posterior samples, Metropolis algorithm acceptance rates, etc
+#' @examples
+#' \dontrun{
+#' data(df)
+#' groupinfo <- list(c(0,1), c(2,3), c(4)) # define the variance structure
+#' x <- df[,6:10]
+#' fit <- bayesnmr(df$y, df$sd, x, df$ids, df$iarm, df$npt, groupinfo,
+#' 			prior = list(c01=1.0e05, c02=4, nu=3),
+#' 			mcmc=list(ndiscard=2500,nskip=1,nkeep=10000))
+#' }
 #' @export
 bayesnmr <- function(y, sd, x, ids, iarm, npt, groupinfo=list(), prior = list(), mcmc = list(), add.z=list(), scale.x=TRUE, verbose=FALSE, init=list()) {
 
@@ -59,7 +71,8 @@ bayesnmr <- function(y, sd, x, ids, iarm, npt, groupinfo=list(), prior = list(),
 
 
 	mcmctime <- system.time({
-				fout <- .Call(`_BayesMeta_BayesNMR`,
+				fout <- .Call(`BayesNMR`,
+					  PACKAGE='BayesMeta',
 					  as.double(y),
 					  as.double(sd),
 					  as.matrix(x),

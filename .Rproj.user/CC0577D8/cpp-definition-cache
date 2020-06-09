@@ -40,5 +40,62 @@
         ],
         "file" : "G:/My Drive/UCONN/2020Spring/SIMrevision/BayesMeta/src/nelmin.hpp",
         "file_last_write" : 1585437994.000000
+    },
+    {
+        "definitions" : [
+        ],
+        "file" : "G:/My Drive/UCONN/Rpackages/bayesmeta/src/BayesNMR.cpp",
+        "file_last_write" : 1591652888.000000
+    },
+    {
+        "definitions" : [
+        ],
+        "file" : "G:/My Drive/UCONN/Rpackages/bayesmeta/src/ListBuilder.h",
+        "file_last_write" : 1591652888.000000
+    },
+    {
+        "definitions" : [
+        ],
+        "file" : "G:/My Drive/UCONN/Rpackages/bayesmeta/src/dic_nmr.cpp",
+        "file_last_write" : 1591652888.000000
+    },
+    {
+        "definitions" : [
+            {
+                "column" : 6,
+                "file" : "G:/My Drive/UCONN/Rpackages/bayesmeta/src/init.c",
+                "kind" : 6,
+                "line" : 22,
+                "name" : "R_init_BayesMeta(DllInfo *)",
+                "parent_name" : "",
+                "usr" : "c:@F@R_init_BayesMeta#*$@S@_DllInfo#"
+            }
+        ],
+        "file" : "G:/My Drive/UCONN/Rpackages/bayesmeta/src/init.c",
+        "file_last_write" : 1591658892.000000
+    },
+    {
+        "definitions" : [
+        ],
+        "file" : "G:/My Drive/UCONN/Rpackages/bayesmeta/src/lpml_nmr.cpp",
+        "file_last_write" : 1591652888.000000
+    },
+    {
+        "definitions" : [
+        ],
+        "file" : "G:/My Drive/UCONN/Rpackages/bayesmeta/src/misc_nmr.cpp",
+        "file_last_write" : 1591652889.000000
+    },
+    {
+        "definitions" : [
+        ],
+        "file" : "G:/My Drive/UCONN/Rpackages/bayesmeta/src/misc_nmr.h",
+        "file_last_write" : 1591652889.000000
+    },
+    {
+        "definitions" : [
+        ],
+        "file" : "G:/My Drive/UCONN/Rpackages/bayesmeta/src/nelmin.h",
+        "file_last_write" : 1591652889.000000
     }
 ]

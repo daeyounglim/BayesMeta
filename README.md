@@ -1,30 +1,48 @@
-## How to use the package
+# 📝 Table of Contents
++ [Installation](#installation)
++ [Example Code](#example_code)
++ [Inputs explained for `bayesnmr`](#inputs)
++ [`R` Package Development Reminders](#dev_reminders)
++ [To-do list](#to_do)
 
-### Installation
+## 🔨 Installation <a name = "installation"></a>
+### Simple
+Run
+```r
+devtools::install_github("daeyounglim/BayesMeta")
+```
 
+### Complex
+Click the "Clone or download" button and download ZIP. Run the following commands:
+```
+unzip("BayesMeta-master.zip")
+file.rename("BayesMeta-master", "BayesMeta")
+shell("R CMD build BayesMeta")
+install.packages(list.files(pattern="(BayesMeta)(.*)(.tar.gz)"), repos = NULL)
+```
+
+### 🔧 Troubleshooting for potential errors
 The package runs C++ behind the scenes, and therefore the computer on which this package will be used must have C++ compilers installed beforehand. Otherwise, the installation might fail.
 
 * **For Windows users** - Download and install [Rtools from the website](https://cran.r-project.org/bin/windows/Rtools/).
 * **For Mac users** - Please install the latest Xcode. It comes with all related compilers.
 * **For Linux** - Install `r-base-dev` through the package manager of your system. For example, on Ubuntu 18.04, run `apt install r-base-dev`. 
 
-After the compilers are ready, run the following to install the dependencies:
+After the compilers are ready, try installing the package again. The dependency installation is supposed to be automated but if `R` complains, then run the following:
 ```r
 install.packages("Rcpp", "RcppArmadillo", "RcppProgress", "BH")
 ```
-When the packages above are successfully installed, run the following to install the `BayesMeta` packages:
-```r
-install.packages("BayesMeta_1.0.tar.gz", type="source", repo=NULL)
-```
+When the packages above are successfully installed, run `devtools::install_github('daeyounglim/BayesMeta')` or following the complex version.
 
-Instead of building the source file yourself, you can use the `devtools` package to install directly from the version control services like GitHub or GitLab. When using `devtools::install_github()`, sometimes `R` complains of the following:
+#### Linux distros
+When using the `devtools::install_github`, some Linux distros fire the following error message:
 ```
 tar: This does not look like a tar archive
 gzip: stdin: unexpected end of file
 ```
 In that case, check if `getOption("download.file.method")` is `curl`. Then, run `options("download.file.method" = "libcurl")` and then try installing again through `devtools::install_github("daeyounglim/BayesMeta")`.
 
-### Example Code
+## 💻 Example Code <a name="example_code"></a>
 ```r
 ##############
 # BNMR-HTMRe #
@@ -42,7 +60,7 @@ dic <- gof(fit, type = "dic") # calculate DIC
 lpml <- gof(fit, type = "lpml") # calculate LPML
 ```
 
-### Inputs explained for `bayesnmr`
+## 🔣 Inputs explained for `bayesnmr` <a name="inputs"></a>
 
 * `y` - aggregate mean of the responses for each arm of each study
 * `sd` - standard deviation of the responses for each arm of each study
@@ -59,7 +77,7 @@ lpml <- gof(fit, type = "lpml") # calculate LPML
 * `verbose` - logical variable for printing progress bar. Default to `FALSE`.
 * `init` - initial values for beta (`ns + nT` dimensional) and phi. Dimensions must be conformant.
 
-## `R` Package Development Reminders
+## 👨🏻‍💻 `R` Package Development Reminders <a name="dev_reminders"></a>
 
 * When creating an R package, don't forget to register the native symbols by running the following:
 ```r
@@ -88,7 +106,7 @@ Then, the convention is to document the datasets in `R/data.R` in the format of
 
 * Create `R/global.R` and include all global variables that will be used in the documentation. This includes all 
 
-## To do
+## ✔️ To do <a name="to_do"></a>
 
 - [x] MCMC for ***Bayesian Network Meta-Regression Hierarchical Models Using Heavy-Tailed Multivariate Random Effects with Covariate-Dependent Variances (BNMR-HTMRe)***
 - [x] DIC and LPML for BNMR-HTMRe

@@ -17,6 +17,13 @@ When the packages above are successfully installed, run the following to install
 install.packages("BayesMeta_1.0.tar.gz", type="source", repo=NULL)
 ```
 
+Instead of building the source file yourself, you can use the `devtools` package to install directly from the version control services like GitHub or GitLab. When using `devtools::install_github()`, sometimes `R` complains of the following:
+```
+tar: This does not look like a tar archive
+gzip: stdin: unexpected end of file
+```
+In that case, check if `getOption("download.file.method")` is `curl`. Then, run `options("download.file.method" = "libcurl")` and then try installing again through `devtools::install_github("daeyounglim/BayesMeta")`.
+
 ### Example Code
 ```r
 ##############
@@ -78,6 +85,8 @@ Then, the convention is to document the datasets in `R/data.R` in the format of
 #' }
 "df"
 ```
+
+* Create `R/global.R` and include all global variables that will be used in the documentation. This includes all 
 
 ## To do
 

@@ -18,7 +18,7 @@ Click the "Clone or download" button and download ZIP. Run the following command
 unzip("BayesMeta-master.zip")
 file.rename("BayesMeta-master", "BayesMeta")
 shell("R CMD build BayesMeta")
-install.packages(list.files(pattern="(BayesMeta)(.*)(.tar.gz)"), repos = NULL)
+install.packages(list.files(pattern="(BayesMeta)(.*)(.tar.gz)"), repos = NULL, type = "source")
 ```
 
 ### 🔧 Troubleshooting for potential errors

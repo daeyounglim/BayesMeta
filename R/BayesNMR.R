@@ -71,8 +71,7 @@ bayesnmr <- function(y, sd, x, ids, iarm, npt, groupinfo=list(), prior = list(),
 
 
 	mcmctime <- system.time({
-				fout <- .Call(`BayesNMR`,
-					  PACKAGE='BayesMeta',
+				fout <- .Call(`_BayesMeta_BayesNMR`,
 					  as.double(y),
 					  as.double(sd),
 					  as.matrix(x),

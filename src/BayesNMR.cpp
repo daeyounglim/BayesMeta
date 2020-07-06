@@ -12,6 +12,7 @@
 #include "nelmin.h"
 // [[Rcpp::depends(RcppArmadillo,RcppProgress))]]
 
+// [[Rcpp::export]]
 Rcpp::List BayesNMR(const arma::vec& y,
 					const arma::vec& sd,
 					const arma::mat& x,

@@ -16,8 +16,7 @@
 	nu <- object$prior$nu
 
 	if (type == "dic") {
-		gof <- .Call(`calc_modelfit_dic`,
-					 PACKAGE='BayesMeta',
+		gof <- .Call(`_BayesMeta_calc_modelfit_dic`,
 					 as.double(y),
 					 as.matrix(x),
 					 as.matrix(z),
@@ -35,8 +34,7 @@
 					 as.integer(nkeep),
 					 as.logical(verbose))
 	} else if (type == "lpml") {
-		gof <- .Call(`calc_modelfit_lpml`,
-					 PACKAGE='BayesMeta',
+		gof <- .Call(`_BayesMeta_calc_modelfit_lpml`,
 					 as.double(y),
 					 as.matrix(x),
 					 as.matrix(z),

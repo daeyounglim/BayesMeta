@@ -1,1 +1,0 @@
-utils::globalVariables(c("BayesNMR", "calc_modelfit_dic", "calc_modelfit_lpml"))

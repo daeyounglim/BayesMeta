@@ -104,8 +104,6 @@ Then, the convention is to document the datasets in `R/data.R` in the format of
 "df"
 ```
 
-* Create `R/global.R` and include all global variables that will be used in the documentation. This includes all 
-
 ## ✔️ To do <a name="to_do"></a>
 
 - [x] MCMC for ***Bayesian Network Meta-Regression Hierarchical Models Using Heavy-Tailed Multivariate Random Effects with Covariate-Dependent Variances (BNMR-HTMRe)***

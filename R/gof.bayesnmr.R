@@ -2,6 +2,8 @@
 #' @param object the output model from fitting a meta analysis/regression model
 #' @param type the type of goodness of fit to compute; DIC or LPML
 #' @param verbose FALSE by default; If TRUE, then progress bar will appear
+#' @method gof bayesnmr
+#' @S3method gof bayesnmr
 
 "gof.bayesnmr" <- function(object, type="lpml", verbose=FALSE) {
 	y <- object$y

@@ -3,6 +3,8 @@
 #' @param prob the probability which the HPD interval will cover
 #' @importFrom coda mcmc HPDinterval
 #' @return dataframe containing HPD intervals for the parameters
+#' @method hpd bayesnmr
+#' @S3method hpd bayesnmr
 
 "hpd.bayesnmr" <- function(object, prob = 0.95) {
 	out <- list()

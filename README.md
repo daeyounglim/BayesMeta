@@ -146,7 +146,9 @@ Then, the convention is to document the datasets in `R/data.R` in the format of
 - [x] MCMC for ***Bayesian Network Meta-Regression Hierarchical Models Using Heavy-Tailed Multivariate Random Effects with Covariate-Dependent Variances (BNMR-HTMRe)***
 - [x] DIC and LPML for BNMR-HTMRe
 - [ ] R code for network metadata diagram
-- [ ] R functions such as `fitted`, `print`, `summary`, `plot` for each class
+- [ ] R code for SUCRA plot
+- [x] R functions such as `fitted`, `print` for each class
+- [ ] R functions such as `summary`, `plot` for each class
 - [ ] MCMC for ***Li, H., Chen, M. H., Ibrahim, J. G., Kim, S., Shah, A. K., Lin, J., & Tershakovec, A. M. (2019). Bayesian inference for network meta-regression using multivariate random effects with applications to cholesterol lowering drugs. Biostatistics, 20(3), 499-516.***
 - [ ] MCMC for ***Bayesian Flexible Hierarchical Skew Heavy-Tailed Multivariate Meta Regression Models for Individual Patient Data with Applications***
 

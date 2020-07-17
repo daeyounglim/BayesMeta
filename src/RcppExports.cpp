@@ -6,6 +6,18 @@
 
 using namespace Rcpp;
 
+// BFSHMVMR
+Rcpp::List BFSHMVMR(const int& K, const int& J);
+RcppExport SEXP _BayesMeta_BFSHMVMR(SEXP KSEXP, SEXP JSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const int& >::type K(KSEXP);
+    Rcpp::traits::input_parameter< const int& >::type J(JSEXP);
+    rcpp_result_gen = Rcpp::wrap(BFSHMVMR(K, J));
+    return rcpp_result_gen;
+END_RCPP
+}
 // BayesNMR
 Rcpp::List BayesNMR(const arma::vec& y, const arma::vec& sd, const arma::mat& x, const arma::mat& z, const arma::uvec& ids, const arma::uvec& iarm, const arma::vec& npt, const double& nu, const double& c01_inv, const double& c02_inv, const int& K, const int& nT, const int& ndiscard, const int& nskip, const int& nkeep, const bool verbose, const arma::vec& beta_init, const arma::vec& phi_init, const arma::vec& sig2_init);
 RcppExport SEXP _BayesMeta_BayesNMR(SEXP ySEXP, SEXP sdSEXP, SEXP xSEXP, SEXP zSEXP, SEXP idsSEXP, SEXP iarmSEXP, SEXP nptSEXP, SEXP nuSEXP, SEXP c01_invSEXP, SEXP c02_invSEXP, SEXP KSEXP, SEXP nTSEXP, SEXP ndiscardSEXP, SEXP nskipSEXP, SEXP nkeepSEXP, SEXP verboseSEXP, SEXP beta_initSEXP, SEXP phi_initSEXP, SEXP sig2_initSEXP) {
@@ -89,6 +101,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_BayesMeta_BFSHMVMR", (DL_FUNC) &_BayesMeta_BFSHMVMR, 2},
     {"_BayesMeta_BayesNMR", (DL_FUNC) &_BayesMeta_BayesNMR, 19},
     {"_BayesMeta_calc_modelfit_dic", (DL_FUNC) &_BayesMeta_calc_modelfit_dic, 16},
     {"_BayesMeta_calc_modelfit_lpml", (DL_FUNC) &_BayesMeta_calc_modelfit_lpml, 16},

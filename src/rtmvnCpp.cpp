@@ -2,20 +2,15 @@
 #include <cmath>
 #include <Rmath.h>
 #include <RcppArmadillo.h>
-#include <RcppTN.h>
 #include <Rdefines.h>
-// [[Rcpp::depends(RcppArmadillo, RcppTN)]]
+#include "random.h"
+// [[Rcpp::depends(RcppArmadillo)]]
 
 arma::mat rtmvn_gibbs(const int& n, const int& p, const arma::vec& Mean, const arma::mat& Sigma_chol,
-                      const arma::mat& R, const arma::vec& a, const arma::vec& b, const arma::vec& z)
+                      const arma::mat& R, const arma::vec& a, const arma::vec& b, arma::vec& z)
 {
   arma::mat keep_x(p, n);
-  //int nrow_R = R.n_rows;
   arma::vec temp;
-  
-  // std::cout << "R: \n" << R << endl;
-  
-  //int sum_pos, sum_neg;
   
   for(int i = 0; i < n; ++i)
   {
@@ -82,7 +77,7 @@ arma::mat rtmvn_gibbs(const int& n, const int& p, const arma::vec& Mean, const a
       double lower_j = std::max(lower_pos, lower_neg);
       double upper_j = std::min(upper_pos, upper_neg);
       
-      z(j) = RcppTN::rtn1(0., 1., lower_j, upper_j);
+      z(j) = tnormrnd(0., 1., lower_j, upper_j);
       
       // cout << "Z_j: " << z(j) << endl;
     }
@@ -91,7 +86,7 @@ arma::mat rtmvn_gibbs(const int& n, const int& p, const arma::vec& Mean, const a
   return(keep_x);
 }
 
-arma::mat rtmvnCpp(const int& n, const arma::vec& Mean, const arma::mat& Sigma, const arma::mat& D,
+arma::mat rtmvn(const int& n, const arma::vec& Mean, const arma::mat& Sigma, const arma::mat& D,
                    const arma::vec& lower, const arma::vec& upper, const arma::vec& init) {
   /******************************
   Test whether the initial value

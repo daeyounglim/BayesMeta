@@ -65,7 +65,6 @@ bayes.nmr <- function(Outcome, SD, Covariate, Study, Treat, Npt, groupInfo, prio
 			}
 		}
 	}
-	# z <- cbind(1,z)
 	if (length(add.z) > 0) {
 		z <- cbind(z, scale(add.z, center=TRUE, scale=TRUE))
 	}
@@ -99,7 +98,7 @@ bayes.nmr <- function(Outcome, SD, Covariate, Study, Treat, Npt, groupInfo, prio
 					  as.double(init_final$sig2))
 			})
 
-	out <- list(OutCome = OutCome,
+	out <- list(Outcome = Outcome,
 				SD = SD,
 				Npt = Npt,
 				Covariate = Covariate,

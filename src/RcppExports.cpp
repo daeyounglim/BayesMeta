@@ -6,15 +6,34 @@
 
 using namespace Rcpp;
 
-// BFSHMVMR
-Rcpp::List BFSHMVMR(const int& K, const int& J);
-RcppExport SEXP _BayesMeta_BFSHMVMR(SEXP KSEXP, SEXP JSEXP) {
+// BMVSMR
+Rcpp::List BMVSMR(const arma::mat& Outcome, const arma::mat& Covariate, const arma::vec& Treat, const arma::uvec& Patient, const arma::uvec& Trial, const double& a0, const double& b0, const double& c1, const double& c2, const double& c3, const double& d0, const arma::mat& S0, const double& d1, const arma::mat& S1, const double& v0, const double& tau, const int& K, const int& ndiscard, const int& nskip, const int& nkeep, const bool& verbose);
+RcppExport SEXP _BayesMeta_BMVSMR(SEXP OutcomeSEXP, SEXP CovariateSEXP, SEXP TreatSEXP, SEXP PatientSEXP, SEXP TrialSEXP, SEXP a0SEXP, SEXP b0SEXP, SEXP c1SEXP, SEXP c2SEXP, SEXP c3SEXP, SEXP d0SEXP, SEXP S0SEXP, SEXP d1SEXP, SEXP S1SEXP, SEXP v0SEXP, SEXP tauSEXP, SEXP KSEXP, SEXP ndiscardSEXP, SEXP nskipSEXP, SEXP nkeepSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type Outcome(OutcomeSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type Covariate(CovariateSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type Treat(TreatSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type Patient(PatientSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type Trial(TrialSEXP);
+    Rcpp::traits::input_parameter< const double& >::type a0(a0SEXP);
+    Rcpp::traits::input_parameter< const double& >::type b0(b0SEXP);
+    Rcpp::traits::input_parameter< const double& >::type c1(c1SEXP);
+    Rcpp::traits::input_parameter< const double& >::type c2(c2SEXP);
+    Rcpp::traits::input_parameter< const double& >::type c3(c3SEXP);
+    Rcpp::traits::input_parameter< const double& >::type d0(d0SEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type S0(S0SEXP);
+    Rcpp::traits::input_parameter< const double& >::type d1(d1SEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type S1(S1SEXP);
+    Rcpp::traits::input_parameter< const double& >::type v0(v0SEXP);
+    Rcpp::traits::input_parameter< const double& >::type tau(tauSEXP);
     Rcpp::traits::input_parameter< const int& >::type K(KSEXP);
-    Rcpp::traits::input_parameter< const int& >::type J(JSEXP);
-    rcpp_result_gen = Rcpp::wrap(BFSHMVMR(K, J));
+    Rcpp::traits::input_parameter< const int& >::type ndiscard(ndiscardSEXP);
+    Rcpp::traits::input_parameter< const int& >::type nskip(nskipSEXP);
+    Rcpp::traits::input_parameter< const int& >::type nkeep(nkeepSEXP);
+    Rcpp::traits::input_parameter< const bool& >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(BMVSMR(Outcome, Covariate, Treat, Patient, Trial, a0, b0, c1, c2, c3, d0, S0, d1, S1, v0, tau, K, ndiscard, nskip, nkeep, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -101,7 +120,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_BayesMeta_BFSHMVMR", (DL_FUNC) &_BayesMeta_BFSHMVMR, 2},
+    {"_BayesMeta_BMVSMR", (DL_FUNC) &_BayesMeta_BMVSMR, 21},
     {"_BayesMeta_BayesNMR", (DL_FUNC) &_BayesMeta_BayesNMR, 19},
     {"_BayesMeta_calc_modelfit_dic", (DL_FUNC) &_BayesMeta_calc_modelfit_dic, 16},
     {"_BayesMeta_calc_modelfit_lpml", (DL_FUNC) &_BayesMeta_calc_modelfit_lpml, 16},

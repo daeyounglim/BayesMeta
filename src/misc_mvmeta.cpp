@@ -26,7 +26,6 @@ double loglik_tau(const double& star,
 				  const double& b1) {
 	using namespace arma;
 	const int K = idxks.n_elem;
-	const int N = zz.n_rows;
 	const double tau = 1.0 + std::exp(star);
 
 	// compute the gamma function
@@ -70,7 +69,7 @@ double loglik_vv(const double& star,
 		mat tmpmat = Sig_star + resid_k.t() * arma::diagmat(lambda_k) * resid_k;
 		log_det(logdet_val, logdet_sign, tmpmat);		
 		int n_k = idx_k.n_elem;
-		loglik += lmgamma(0.5 * (vv + static_cast<double>(n_k))) - lmgamma(0.5 * vv)
+		loglik += lmgamma(0.5 * (vv + static_cast<double>(n_k)), J) - lmgamma(0.5 * vv, J)
 				  - 0.5 * (vv + static_cast<double>(n_k)) * logdet_val;
 	}
 	return loglik;

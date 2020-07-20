@@ -10,7 +10,7 @@
 \item{object}{the output model from fitting a meta analysis/regression model}
 }
 \value{
-a summary of the output
+does not return anything; print a summary of the output
 }
 \description{
 Print results

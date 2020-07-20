@@ -21,5 +21,7 @@ double EGIG_xinv(const double& lambda, const double& chi, const double& psi);
 double rtgamma(const double& a, const double& b, const double& truncpoint, const bool& up);
 arma::mat rwish(const double& v, const arma::mat& S);
 arma::mat riwish(const double& v, const arma::mat& S);
-
+double tnormrnd(const double& mu, const double& sigma, const double& low, const double& up);
+double rtnormrnd(const double& mu, const double& sigma, const double& up);
+double ltnormrnd(const double& mu, const double& sigma, const double& low);
 #endif

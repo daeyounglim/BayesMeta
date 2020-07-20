@@ -490,3 +490,54 @@ arma::mat riwish(const double& v, const arma::mat& S) {
   }
   return arma::inv(R.t() * A * A.t() * R);
 }
+
+double tnormrnd(const double& mu, const double& sigma, const double& low, const double& up) {
+    double u, pleft, pright, y;
+
+    pleft=pnorm(low,mu,sigma,1,0);
+    pright=pnorm(up,mu,sigma,1,0);
+    if (pleft>0.9999)
+        return (low)+0.0001*fmax2((up)-(low),sigma);
+    if (pright<0.0001)
+        return (up)-0.0001*fmax2((up)-(low),sigma);
+    u=::unif_rand();
+    u=pleft+(pright-pleft)*u;
+    y=R::qnorm5(u,mu,sigma,1,0);
+
+    return y;
+}
+
+double rtnormrnd(const double& mu, const double& sigma, const double& up)
+{
+    double u,pcut,x;
+
+    if ((sigma)==0.0){ /* degenerate sigma=0 */
+        return ((mu)<(up)) ? (mu) : (up);
+    }
+    pcut=R::pnorm5(up,mu,sigma,1,0);
+    if (pcut < 0.0001)
+        return (up)-0.0001*(sigma);
+    u=::unif_rand();
+    u=u*pcut;
+    x=R::qnorm5(u,mu,sigma,1,0);
+
+    return x;
+}
+
+double ltnormrnd(const double& mu, const double& sigma, const double& low)
+{
+    double u,pcut,x;
+
+    if ((sigma)==0.0){ /* degenerate sigma=0 */
+        return ((mu)>(low)) ? (mu) : (low);
+    }
+
+    pcut=R::pnorm5(low,mu,sigma,1,0);
+    if (pcut>0.9999)
+        return (low)+0.0001*(sigma);
+    u=::unif_rand();
+    u=pcut+(1.0-pcut)*u;
+    x=R::qnorm5(u,mu,sigma,1,0);
+
+    return x;
+}

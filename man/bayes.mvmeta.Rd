@@ -8,7 +8,7 @@ bayes.mvmeta(Outcome, Trial, Patient, Treat, Covariate, tau,
   prior = list(), mcmc = list(), verbose = FALSE)
 }
 \arguments{
-\item{Outcome}{aggregate mean of the responses for each arm of each study}
+\item{Outcome}{the responses for each patient in every trial}
 
 \item{Trial}{the identifier for a trial; it will internally be relabeled to contiguous/consecutive natural numbers starting from 1}
 
@@ -16,7 +16,7 @@ bayes.mvmeta(Outcome, Trial, Patient, Treat, Covariate, tau,
 
 \item{Treat}{treatment applied; it will internally be relabeled to 0 and 1}
 
-\item{Covariate}{aggregate covariates for the mean component}
+\item{Covariate}{covariates for fixed effects}
 
 \item{tau}{hyperparameter which determines the level of skewness}
 

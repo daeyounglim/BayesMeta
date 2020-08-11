@@ -24,6 +24,8 @@ beta : xcols * J
 gamma: q * J
 delta_star : J * K
 
+
+If J = 1, don't sample psi
 */
 
 // [[Rcpp::export]]
@@ -62,7 +64,7 @@ Rcpp::List BMVSMR(const arma::mat& Outcome,
 
 	arma::field<arma::uvec> idxks(K);
 	for (int k = 0; k < K; ++k) {
-		uvec idx = find(Trial == k+1);
+		uvec idx = find(Trial == k);
 		idxks(k) = idx;
 	}
 

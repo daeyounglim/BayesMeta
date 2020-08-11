@@ -105,6 +105,7 @@ bayes.nmr <- function(Outcome, SD, Covariate, Study, Treat, Npt, groupInfo, prio
 				z = z,
 				Study = Study,
 				Treat = Treat,
+				TrtLabels = Treat.order,
 				K = K,
 				nT = nT,
 				groupInfo = groupInfo,

@@ -2,11 +2,11 @@
 #' 
 #' This is a function for running the Markov chain Monte Carlo algorithm for the BFSHMVMR Model. The first six arguments are required.
 #' @author Daeyoung Lim, \email{daeyoung.lim@uconn.edu}
-#' @param Outcome aggregate mean of the responses for each arm of each study
+#' @param Outcome the responses for each patient in every trial
 #' @param Trial the identifier for a trial; it will internally be relabeled to contiguous/consecutive natural numbers starting from 1
 #' @param Patient the patient number in each trial
 #' @param Treat treatment applied; it will internally be relabeled to 0 and 1
-#' @param Covariate aggregate covariates for the mean component
+#' @param Covariate covariates for fixed effects
 #' @param tau hyperparameter which determines the level of skewness
 #' @param prior list of hyperparameters; when not given, algorithm will run in default setting
 #' @param mcmc list of MCMC-related parameters: number of burn-ins (ndiscard), number of thinning(nskip), and posterior sample size (nkeep)

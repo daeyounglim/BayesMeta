@@ -2,6 +2,7 @@
 #include <Rmath.h>
 #include <RcppArmadillo.h>
 #include <Rdefines.h>
+#include "linearalgebra.h"
 #include "misc_nmr.h"
 // [[Rcpp::depends(RcppArmadillo)]]
 
@@ -85,50 +86,6 @@ double loglik_phi(const arma::vec& phi,
 	return loglik;
 }
 
-
-arma::mat pRho_to_Rho(arma::mat& pRho) {
-	using namespace arma;
-	using namespace Rcpp;
-	using namespace R;
-	using namespace std;
-
-	const int nT = pRho.n_rows;
-	mat Rho = pRho;
-
-	for (int iL=2; iL < nT; ++iL) {
-		mat rmat(iL-1,iL-1, fill::zeros);
-
-		for (int iR=1; iR < nT-iL+1; ++iR) {
-			vec rvec1(nT-2, fill::zeros);
-			vec rvec3(nT-2, fill::zeros);
-
-			for (int i1=1; i1 < iL; ++i1) {
-				rvec1(i1-1) = Rho(iR-1, iR+i1-1);
-				rvec3(i1-1) = Rho(iR+i1-1, iR+iL-1);
-			}
-			double rr11 = 0.0;
-			double rr13 = 0.0;
-			double rr33 = 0.0;
-
-			for (int i1=1; i1 < iL; ++i1) {
-				for (int j1=1; j1 < iL; ++j1) {
-					rmat(i1-1,j1-1) = Rho(iR+i1-1, iR+j1-1);
-				}
-			}
-			mat rmatinv = rmat.i();
-			for (int i1=1; i1 < iL; ++i1) {
-				for (int j1=1; j1 < iL; ++j1) {
-					rr11 += rvec1(i1-1) * rmatinv(i1-1,j1-1) * rvec1(j1-1);
-					rr13 += rvec1(i1-1) * rmatinv(i1-1,j1-1) * rvec3(j1-1);
-					rr33 += rvec3(i1-1) * rmatinv(i1-1,j1-1) * rvec3(j1-1);
-				}
-			}
-			Rho(iR-1, iR+iL-1) = rr13 + pRho(iR-1,iR+iL-1) * std::sqrt((1.0 - rr11) * (1.0 - rr33));
-			Rho(iR+iL-1,iR-1) = Rho(iR-1, iR+iL-1);
-		}
-	}
-	return Rho;
-}
 
 double loglik_z(const double& zprho,
 				const int& index1,

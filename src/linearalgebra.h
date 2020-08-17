@@ -14,5 +14,6 @@ arma::mat vechinv(const arma::vec& v, const int& n);
 arma::mat duplicate_matrix (const int& n);
 arma::vec uppertriv(const arma::mat& A);
 arma::mat blockdiag( arma::field<arma::mat>& x );
+arma::mat pRho_to_Rho(arma::mat& pRho);
 
 #endif

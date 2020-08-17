@@ -8,6 +8,7 @@
 #include <progress.hpp>
 #include <progress_bar.hpp>
 #include "ListBuilder.h"
+#include "linearalgebra.h"
 #include "misc_nmr.h"
 #include "nelmin.h"
 // [[Rcpp::depends(RcppArmadillo,RcppProgress))]]

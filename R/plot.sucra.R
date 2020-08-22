@@ -8,15 +8,15 @@
 	names <- object$names
 	oask <- devAskNewPage(TRUE)
 	for (TRT in 1:nT) {
+		Area=round(object$SUCRA[TRT],3)
 		plot(1:nT,type="n",ylim=c(0,1), xaxt="n",
 		   xlab=paste("Rank of",as.character(names[TRT])), 
-		   ylab="Probability", ...)
+		   ylab="Probability", main = paste0("SUCRA = ", Area), ...)
 		axis(1,at=1:nT,label=names)
 		lines(lwd=2,lty=1,c(1,c(1:c(nT)),nT), 
 		    cumeffectiveness[c(1,1:c(nT),c(nT)),TRT], col=rgb(0, 157, 114, maxColorValue = 255))
 		lines(lwd=2,lty=3,col="#eab159",c(1,c(1:c(nT)),nT), 
 		    object$rankProb[c(1,1:c(nT),c(nT)),TRT])
-		Area=round(object$SUCRA[TRT],3)
 	}
 	on.exit(devAskNewPage(oask))
 }

@@ -46,7 +46,7 @@ bayes.nmr <- function(Outcome, SD, Covariate, Study, Treat, Npt, groupInfo, prio
 	c02 <- priorvals$c02
 
 	Treat.order <- sort(unique(Treat))
-	Treat <- relabel.vec(Treat, Treat.order) - 1 # relabel the treatment numbers
+	Treat.n <- relabel.vec(Treat, Treat.order) - 1 # relabel the treatment numbers
 	# if (min(unique(Treat)) != 0) {
 	# 	stop("The treatments should start from 0. Please adjust accordingly.")
 	# }
@@ -82,7 +82,7 @@ bayes.nmr <- function(Outcome, SD, Covariate, Study, Treat, Npt, groupInfo, prio
 					  as.matrix(Covariate),
 					  as.matrix(z),
 					  as.integer(Study),
-					  as.integer(Treat),
+					  as.integer(Treat.n),
 					  as.double(Npt),
 					  as.double(nu),
 					  as.double(1/c01),
@@ -104,7 +104,7 @@ bayes.nmr <- function(Outcome, SD, Covariate, Study, Treat, Npt, groupInfo, prio
 				Covariate = Covariate,
 				z = z,
 				Study = Study,
-				Treat = Treat,
+				Treat = Treat.n,
 				TrtLabels = Treat.order,
 				K = K,
 				nT = nT,

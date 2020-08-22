@@ -1,6 +1,6 @@
 #' Fit Bayesian Inference for Multivariate Meta-Regression With a Partially Observed Within-Study Sample Covariance Matrix
 #' 
-#' This is a function for running the Markov chain Monte Carlo algorithm for the BMVMR_POCOv Model. The first six arguments are required.
+#' This is a function for running the Markov chain Monte Carlo algorithm for the BMVMR_POCov Model. The first six arguments are required.
 #' @author Daeyoung Lim, \email{daeyoung.lim@uconn.edu}
 #' @param Outcome aggregate mean of the responses for each arm of each study
 #' @param SD standard deviation of the responses for each arm of each study
@@ -16,12 +16,17 @@
 #' @return a dataframe with input arguments, posterior samples, Metropolis algorithm acceptance rates, etc
 #' @examples
 #' \dontrun{
-#' data(df)
-#' groupInfo <- list(c(0,1), c(2,3), c(4)) # define the variance structure
-#' x <- df[,6:10]
-#' fit <- bayes.parobs(df$y, df$sd, x, df$ids, df$iarm, df$npt, groupInfo,
-#' 			prior = list(c01=1.0e05, c02=4, nu=3),
-#' 			mcmc=list(ndiscard=2500,nskip=1,nkeep=10000))
+#' data("cholesterol")
+#' Outcome <- cbind(cholesterol$ldlcm, cholesterol$hdlcm, cholesterol$tgm)
+#' SD <- cbind(cholesterol$ldlcsd, cholesterol$hdlcsd, cholesterol$tgsd)
+#' Trial <- cholesterol$Trial
+#' Treat <- cholesterol$Trt
+#' Npt <- cholesterol$npt
+#' XCovariate <- cbind(cholesterol$bl_ldlc, cholesterol$bl_hdlc, cholesterol$bl_tg, cholesterol$age, cholesterol$Dur, cholesterol$white, cholesterol$male, cholesterol$DM)
+#' WCovariate <- cbind(1, cholesterol$Trt)
+#'
+#' fit <- bayes.parobs(Outcome, SD, XCovariate, WCovariate, Treat, Trial, Npt, 1,
+#' 			mcmc=list(ndiscard=2500,nskip=1,nkeep=10000), verbose = TRUE)
 #' }
 #' @export
 bayes.parobs <- function(Outcome, SD, XCovariate, WCovariate, Treat, Trial, Npt, fmodel = 1, prior = list(), mcmc = list(), verbose=FALSE) {
@@ -34,7 +39,7 @@ bayes.parobs <- function(Outcome, SD, XCovariate, WCovariate, Treat, Trial, Npt,
 
 	J = ncol(Outcome)
 	nw = ncol(WCovariate)
- 	priorvals <- list(c0 = 1.0e05, dj0 = 1, d0 = 1, s0 = 1, Omega0 = diag(nw), Sigma0 = diag(J))
+ 	priorvals <- list(c0 = 1.0e05, dj0 = 0.1 + nw, d0 = 0.1 + J, s0 = 0.1, Omega0 = diag(10,nw), Sigma0 = diag(10,J))
 	priorvals[names(prior)] <- prior
 	c0 <- priorvals$c0
 	dj0 <- priorvals$dj0
@@ -55,8 +60,8 @@ bayes.parobs <- function(Outcome, SD, XCovariate, WCovariate, Treat, Trial, Npt,
 
 	mcmctime <- system.time({
 				fout <- .Call(`_BayesMeta_BMVMR_POCov`,
-					  as.double(Outcome),
-					  as.double(SD),
+					  as.matrix(Outcome),
+					  as.matrix(SD),
 					  as.matrix(XCovariate),
 					  as.matrix(WCovariate),
 					  as.integer(Treat.n),

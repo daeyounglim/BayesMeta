@@ -122,6 +122,29 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// veclinv
+arma::mat veclinv(const arma::vec& v, const int& n);
+RcppExport SEXP _BayesMeta_veclinv(SEXP vSEXP, SEXP nSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::vec& >::type v(vSEXP);
+    Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
+    rcpp_result_gen = Rcpp::wrap(veclinv(v, n));
+    return rcpp_result_gen;
+END_RCPP
+}
+// pRho_to_Rho
+arma::mat pRho_to_Rho(arma::mat& pRho);
+RcppExport SEXP _BayesMeta_pRho_to_Rho(SEXP pRhoSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat& >::type pRho(pRhoSEXP);
+    rcpp_result_gen = Rcpp::wrap(pRho_to_Rho(pRho));
+    return rcpp_result_gen;
+END_RCPP
+}
 // calc_modelfit_lpml
 Rcpp::List calc_modelfit_lpml(const arma::vec& y, const arma::mat& x, const arma::mat& z, const arma::uvec& ids, const arma::uvec& iarm, const arma::vec& npt, const double& nu, const arma::mat& betas, const arma::mat& sig2s, const arma::mat& phis, const arma::mat& lams, const arma::cube& Rhos, const int& K, const int& nT, const int& nkeep, const bool verbose);
 RcppExport SEXP _BayesMeta_calc_modelfit_lpml(SEXP ySEXP, SEXP xSEXP, SEXP zSEXP, SEXP idsSEXP, SEXP iarmSEXP, SEXP nptSEXP, SEXP nuSEXP, SEXP betasSEXP, SEXP sig2sSEXP, SEXP phisSEXP, SEXP lamsSEXP, SEXP RhosSEXP, SEXP KSEXP, SEXP nTSEXP, SEXP nkeepSEXP, SEXP verboseSEXP) {
@@ -148,13 +171,28 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rwish
+arma::mat rwish(const double& v, const arma::mat& S);
+RcppExport SEXP _BayesMeta_rwish(SEXP vSEXP, SEXP SSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const double& >::type v(vSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type S(SSEXP);
+    rcpp_result_gen = Rcpp::wrap(rwish(v, S));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_BayesMeta_BMVMR_POCov", (DL_FUNC) &_BayesMeta_BMVMR_POCov, 20},
     {"_BayesMeta_BMVSMR", (DL_FUNC) &_BayesMeta_BMVSMR, 21},
     {"_BayesMeta_BayesNMR", (DL_FUNC) &_BayesMeta_BayesNMR, 19},
     {"_BayesMeta_calc_modelfit_dic", (DL_FUNC) &_BayesMeta_calc_modelfit_dic, 16},
+    {"_BayesMeta_veclinv", (DL_FUNC) &_BayesMeta_veclinv, 2},
+    {"_BayesMeta_pRho_to_Rho", (DL_FUNC) &_BayesMeta_pRho_to_Rho, 1},
     {"_BayesMeta_calc_modelfit_lpml", (DL_FUNC) &_BayesMeta_calc_modelfit_lpml, 16},
+    {"_BayesMeta_rwish", (DL_FUNC) &_BayesMeta_rwish, 2},
     {NULL, NULL, 0}
 };
 

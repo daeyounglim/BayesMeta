@@ -33,3 +33,5 @@ relabel.vec <- function(x, order)
   for (i in seq(length(order))) x[old.x == order[i]] <- i #relabel studies in numerical order starting with one
   x
 }
+
+

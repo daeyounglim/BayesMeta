@@ -17,6 +17,7 @@ arma::vec vecl(const arma::mat& X) {
 	return out;
 }
 
+// [[Rcpp::export]]
 arma::mat veclinv(const arma::vec& v, const int& n) {
 	using namespace arma;
 	mat out(n, n, fill::zeros);
@@ -32,20 +33,6 @@ arma::mat veclinv(const arma::vec& v, const int& n) {
 	return out;
 }
 
-arma::mat veclinv(const arma::rowvec& v, const int& n) {
-	using namespace arma;
-	mat out(n, n, fill::zeros);
-	int count1 = 0;
-	int count2 = n-2;
-	for (int i = 0; i < n-1; ++i) {
-		vec vv = v(span(count1, count2));
-		out(span(i+1, n-1), i) = vv.t();
-		out(i, span(i+1,n-1)) = vv;
-		count1 = count2+1;
-		count2 += n-2-i;
-	}
-	return out;
-}
 
 arma::vec vech(const arma::mat& X) {
 	int n = X.n_rows;
@@ -67,22 +54,6 @@ arma::mat vechinv(const arma::vec& v, const int& n) {
 		vec vv = v(span(count1, count2));
 		out(span(i+1, n-1),i) = vv.tail(n-1-i);
 		out(i, span(i, n-1)) = vv.t();
-		count1 = count2 + 1;
-		count2 += n-1-i;
-	}
-	out(n-1,n-1) = v(n*(n+1)/2-1);
-	return out;
-}
-
-arma::mat vechinv(const arma::rowvec& v, const int& n) {
-	using namespace arma;
-	mat out(n, n, fill::zeros);
-	int count1 = 0;
-	int count2 = n-1;
-	for (int i = 0; i < n-1; ++i) {
-		vec vv = v(span(count1, count2));
-		out(span(i+1, n-1),i) = vv.tail(n-1-i);
-		out(i, span(i, n-1)) = vv;
 		count1 = count2 + 1;
 		count2 += n-1-i;
 	}
@@ -153,6 +124,7 @@ arma::mat blockdiag( arma::field<arma::mat>& x ) {
 Convert partial correlation
 to correlation
 **************************/
+// [[Rcpp::export]]
 arma::mat pRho_to_Rho(arma::mat& pRho) {
 	using namespace arma;
 	using namespace Rcpp;

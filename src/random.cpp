@@ -465,6 +465,7 @@ double rtgamma(const double& a, const double& b, const double& truncpoint, const
   return x;
 }
 
+// [[Rcpp::export]]
 arma::mat rwish(const double& v, const arma::mat& S) {
   int p = S.n_rows;
   arma::mat R = arma::chol(S);

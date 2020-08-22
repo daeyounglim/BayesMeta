@@ -17,7 +17,19 @@ calc_modelfit_dic <- function(y, x, z, ids, iarm, npt, nu, betas, sig2s, phis, l
     .Call(`_BayesMeta_calc_modelfit_dic`, y, x, z, ids, iarm, npt, nu, betas, sig2s, phis, lams, Rhos, K, nT, nkeep, verbose)
 }
 
+veclinv <- function(v, n) {
+    .Call(`_BayesMeta_veclinv`, v, n)
+}
+
+pRho_to_Rho <- function(pRho) {
+    .Call(`_BayesMeta_pRho_to_Rho`, pRho)
+}
+
 calc_modelfit_lpml <- function(y, x, z, ids, iarm, npt, nu, betas, sig2s, phis, lams, Rhos, K, nT, nkeep, verbose) {
     .Call(`_BayesMeta_calc_modelfit_lpml`, y, x, z, ids, iarm, npt, nu, betas, sig2s, phis, lams, Rhos, K, nT, nkeep, verbose)
+}
+
+rwish <- function(v, S) {
+    .Call(`_BayesMeta_rwish`, v, S)
 }
 

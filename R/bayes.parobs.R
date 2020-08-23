@@ -39,7 +39,7 @@ bayes.parobs <- function(Outcome, SD, XCovariate, WCovariate, Treat, Trial, Npt,
 
 	J = ncol(Outcome)
 	nw = ncol(WCovariate)
- 	priorvals <- list(c0 = 1.0e05, dj0 = 0.1 + nw, d0 = 0.1 + J, s0 = 0.1, Omega0 = diag(10,nw), Sigma0 = diag(10,J))
+ 	priorvals <- list(c0 = 1.0e05, dj0 = 0.1 + nw, d0 = 0.1 + J, s0 = 0.1, Omega0 = diag(10,nw), Sigma0 = diag(10,J), nu0 = 10)
 	priorvals[names(prior)] <- prior
 	c0 <- priorvals$c0
 	dj0 <- priorvals$dj0
@@ -47,6 +47,7 @@ bayes.parobs <- function(Outcome, SD, XCovariate, WCovariate, Treat, Trial, Npt,
 	s0 <- priorvals$s0
 	Omega0 <- priorvals$Omega0
 	Sigma0 <- priorvals$Sigma0
+	nu0 <- priorvals$nu0
 	
 
 	Treat.order <- sort(unique(Treat))
@@ -71,6 +72,7 @@ bayes.parobs <- function(Outcome, SD, XCovariate, WCovariate, Treat, Trial, Npt,
 					  as.double(dj0),
 					  as.double(d0),
 					  as.double(s0),
+					  as.double(nu0),
 					  as.matrix(Omega0),
 					  as.matrix(Sigma0),
 					  as.integer(K),
